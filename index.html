@@ -72,9 +72,14 @@
 
             <!-- 검색 결과 영역 -->
             <div id="dict-result" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-800">
-                <div class="text-center text-gray-400 py-12 italic text-[11px]">
+                <div class="text-center text-gray-400 py-10 italic text-[11px]">
                     단어를 입력하고 엔터를 누르세요.
                 </div>
+            </div>
+
+            <!-- 저작권 및 출처 표기 푸터 (라이선스 준수) -->
+            <div class="px-2 py-1 bg-[#f5f2e6]/50 border-t border-gray-200 text-[9px] text-gray-400 text-center tracking-tight">
+                출처: 국립국어원 표준국어대사전 (CC BY-SA)
             </div>
 
             <!-- 하단 검색 입력폼 -->
@@ -91,7 +96,6 @@
         window.onload = function() {
             const savedKey = localStorage.getItem('korean_dict_api_key');
             if (!savedKey) {
-                // 키가 없으면 자동으로 설정 창 띄우기
                 document.getElementById('settings-modal').classList.remove('hidden');
             } else {
                 document.getElementById('api-key-input').value = savedKey;
@@ -133,7 +137,7 @@
                 return;
             }
 
-            resultContainer.innerHTML = `<div class="text-center text-gray-400 py-12 text-[11px]"><i class="fa-solid fa-spinner fa-spin mr-1"></i>검색 중...</div>`;
+            resultContainer.innerHTML = `<div class="text-center text-gray-400 py-10 text-[11px]"><i class="fa-solid fa-spinner fa-spin mr-1"></i>검색 중...</div>`;
 
             const targetUrl = `https://stdict.korean.go.kr/api/search.do?key=${apiKey}&type_search=search&req_type=json&q=${encodeURIComponent(query)}`;
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
@@ -204,7 +208,7 @@
             resultContainer.innerHTML = '';
 
             if (!items || items.length === 0) {
-                resultContainer.innerHTML = `<div class="text-center text-gray-400 py-12 text-[11px]">검색 결과가 없습니다.</div>`;
+                resultContainer.innerHTML = `<div class="text-center text-gray-400 py-10 text-[11px]">검색 결과가 없습니다.</div>`;
                 return;
             }
 
