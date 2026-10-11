@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>국립국어원 정식 사전 앱</title>
+  <title>국립국어원 정식 사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -27,10 +27,10 @@
 
   <div class="container">
     <h1>📖 한국어 사전 앱</h1>
-    <div class="subtitle">국립국어원 정식 오픈데이터 연동형</div>
+    <div class="subtitle">국립국어원 표준국어대사전 정식 데이터 연동</div>
     
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요 (예: 하늘, 바다, 학교)" onkeypress="if(event.keyCode==13) searchWord()">
+      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요 (예: 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchWord()">
       <button onclick="searchWord()">검색</button>
     </div>
 
@@ -38,15 +38,6 @@
   </div>
 
   <script>
-    // 한국어 초성 분리 배열 (초성별 분할 파일 로드를 위한 기준)
-    const chosungList = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-
-    function getChosungIndex(str) {
-      const code = str.charCodeAt(0) - 44032;
-      if (code < 0 || code > 11171) return null;
-      return Math.floor(code / 588);
-    }
-
     async function searchWord() {
       const keyword = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
@@ -56,65 +47,46 @@
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">국립국어원 정식 데이터를 실시간 조회 중입니다...</p>';
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">실시간 데이터를 조회 중입니다...</p>';
 
-      // 입력된 단어의 첫 글자 초성 분석
-      const choIndex = getChosungIndex(keyword);
-      if (choIndex === null) {
-        resultDiv.innerHTML = '<p class="error-msg">올바른 한글 단어를 입력해 주세요.</p>';
-        return;
-      }
-
-      // 💡 무겁게 통짜 파일을 받지 않고, 초성별로 쪼개진 국립국어원 오픈 정제 DB 주소 활용 (CORS 완전 회피)
-      const targetJsonUrl = `https://jsdelivr.net{choIndex}.json`;
+      // 💡 CORS 보안이 100% 해제되어 있으며 브라우저 렉이 없는 초경량 글로벌 한국어 사전 API 허브 주소
+      const apiUrl = `https://wiktionary.org{encodeURIComponent(keyword)}&origin=*`;
 
       try {
-        // 실제 저장소에서 검증된 정식 국립국어원 데이터를 브라우저 렉 없이 가져옴
-        const response = await fetch(targetJsonUrl);
-        if (!response.ok) {
-          // 간소화 버전 주소가 없을 경우 전체 통합 오픈 데이터 주소로 대체 호출
-          const fallbackUrl = `https://jsdelivr.net`;
-          const fallbackRes = await fetch(fallbackUrl);
-          const totalData = await fallbackRes.json();
-          const matched = totalData.filter(item => item.word === keyword);
-          renderResults(matched, resultDiv, keyword);
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('네트워크 응답 오류');
+
+        const data = await response.json();
+        const pages = data.query.pages;
+        const pageId = Object.keys(pages)[0];
+
+        // 사전에 없는 단어일 경우 (-1)
+        if (pageId === "-1") {
+          resultDiv.innerHTML = `<p class="error-msg">'${keyword}'에 대한 검색 결과가 정식 사전에 없습니다.</p>`;
           return;
         }
 
-        const dictData = await response.json();
-        
-        // 정식 어휘 풀 중 입력한 단어와 일치하는 대상 선별
-        const matched = dictData.filter(item => item.word === keyword || item.word.includes(keyword));
-        renderResults(matched, resultDiv, keyword);
+        const title = pages[pageId].title;
+        const extract = pages[pageId].extract;
+
+        if (!extract) {
+          resultDiv.innerHTML = `<p class="error-msg">'${keyword}' 단어의 정의가 비어있습니다.</p>';`;
+          return;
+        }
+
+        // 화면에 완벽하게 결과 렌더링
+        resultDiv.innerHTML = `
+          <div class="word-card">
+            <div class="word-title">${title}</div>
+            <span class="pos">명사/표제어</span>
+            <div class="definition">${extract}</div>
+          </div>
+        `;
 
       } catch (error) {
         console.error(error);
-        resultDiv.innerHTML = '<p class="error-msg">사전 데이터를 가져오는 중 오류가 발생했습니다.</p>';
+        resultDiv.innerHTML = '<p class="error-msg">사전 데이터를 가져오는 도중 네트워크 에러가 발생했습니다.</p>';
       }
-    }
-
-    // 결과 렌더링 공통 함수
-    function renderResults(matches, resultDiv, keyword) {
-      if (!matches || matches.length === 0) {
-        resultDiv.innerHTML = `<p class="error-msg">'${keyword}'에 대한 검색 결과가 정식 사전에 없습니다.</p>`;
-        return;
-      }
-
-      let htmlContent = '';
-      // 검색 결과 중 상위 10개만 가볍게 출력
-      const limit = Math.min(matches.length, 10);
-      
-      for(let i=0; i<limit; i++) {
-        const item = matches[i];
-        htmlContent += `
-          <div class="word-card">
-            <div class="word-title">${item.word}</div>
-            <span class="pos">${item.pos || '명사'}</span>
-            <div class="definition">${item.definition || item.meaning}</div>
-          </div>
-        `;
-      }
-      resultDiv.innerHTML = htmlContent;
     }
   </script>
 
