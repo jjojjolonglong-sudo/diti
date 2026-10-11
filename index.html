@@ -3,85 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>번개 한국어 사전</title>
+  <title>실시간 한국어 사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #333; margin-bottom: 25px; }
     .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
     input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-    input:focus { border-color: #28a745; }
-    button { padding: 12px 24px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    button:hover { background-color: #218838; }
+    input:focus { border-color: #007bff; }
+    button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #0056b3; }
     #result { line-height: 1.6; color: #444; }
     .word-item { border-bottom: 1px solid #eee; padding: 15px 0; }
     .word-item:last-child { border: none; }
-    .word-title { font-size: 20px; font-weight: bold; color: #111; display: inline-block; margin-right: 10px; }
-    .pos { font-size: 14px; color: #007bff; font-weight: bold; background: #e7f1ff; padding: 2px 6px; border-radius: 4px; }
-    .definition { margin-top: 8px; color: #555; white-space: pre-line; }
-    .info-msg { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+    .word-title { font-size: 24px; font-weight: bold; color: #007bff; display: inline-block; margin-bottom: 10px; }
+    .definition { font-size: 16px; color: #333; white-space: pre-line; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>💚 번개 한국어 사전</h1>
-    <p class="info-msg">GitHub Pages 서버 환경에서 완벽하게 단독 구동되는 사전입니다.</p>
+    <h1>📖 실시간 한국어 사전 앱</h1>
     
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="단어를 입력하세요 (예: 사랑, 나무, 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchLocalWord()">
-      <button onclick="searchLocalWord()">검색</button>
+      <input type="text" id="wordInput" placeholder="검색할 실제 한국어 단어를 입력하세요" onkeypress="if(event.keyCode==13) searchWord()">
+      <button onclick="searchWord()">검색</button>
     </div>
 
     <div id="result"></div>
   </div>
 
   <script>
-    // 💾 고장 나지 않는 내부 데이터베이스 (여기에 필요한 단어들을 계속 누적할 수 있습니다)
-    const dictionaryDatabase = [
-      { word: "사랑", pos: "명사", definition: "어떤 사람이나 존재를 몹시 아끼고 귀중히 여기는 마음. 또는 그런 상태." },
-      { word: "나무", pos: "명사", definition: "줄기나 가지가 단단하고 매년 자라는 여러해살이 식물." },
-      { word: "하늘", pos: "명사", definition: "지구 위를 둘러싸고 있는 끝없는 공간. 푸르게 보이는 대기권 공간." },
-      { word: "컴퓨터", pos: "명사", definition: "전자 회로를 이용하여 대량의 데이터를 고속으로 자동 처리하는 기계." },
-      { word: "바다", pos: "명사", definition: "지구 위에서 짠물이 고여 있는 아주 넓고 큰 곳." },
-      { word: "행복", pos: "명사", definition: "생활에서 기쁨과 만족을 느껴 흐뭇한 상태." },
-      { word: "친구", pos: "명사", definition: "가깝게 오래 사귄 사람. 또는 나이가 비슷하여 친하게 지내는 사람." },
-      { word: "학습", pos: "명사", definition: "배우고 익혀서 지식이나 기술을 자기 것으로 만드는 과정." }
-    ];
-
-    function searchLocalWord() {
-      const keyword = document.getElementById('wordInput').value.trim();
+    // 1. JSONP 응답을 처리할 글로벌 전역 콜백 함수 정의 (CORS 해결 핵심)
+    window.handleDictionaryResponse = function(data) {
       const resultDiv = document.getElementById('result');
       
-      if (!keyword) {
+      if (!data || !data.query || !data.query.pages) {
+        resultDiv.innerHTML = '<p class="error-msg">데이터 처리 중 오류가 발생했습니다.</p>';
+        return;
+      }
+
+      const pages = data.query.pages;
+      const pageId = Object.keys(pages)[0];
+
+      // 검색한 단어 페이지가 사전에 없는 경우 (-1 반환)
+      if (pageId === "-1") {
+        resultDiv.innerHTML = '<p class="error-msg">사전에서 검색 결과를 찾을 수 없습니다.</p>';
+        return;
+      }
+
+      const title = pages[pageId].title;
+      const extract = pages[pageId].extract;
+
+      if (!extract) {
+        resultDiv.innerHTML = '<p class="error-msg">단어 정의 데이터가 비어있습니다.</p>';
+        return;
+      }
+
+      // 화면에 실시간 오픈 API 데이터 출력
+      resultDiv.innerHTML = `
+        <div class="word-item">
+          <div class="word-title">${title}</div>
+          <div class="definition">${extract}</div>
+        </div>
+      `;
+    };
+
+    // 2. 검색 시 동적으로 <script> 태그를 생성해 원격 API를 호출하는 함수
+    function searchWord() {
+      const word = document.getElementById('wordInput').value.trim();
+      const resultDiv = document.getElementById('result');
+      
+      if (!word) {
         resultDiv.innerHTML = '<p class="error-msg">단어를 입력해주세요.</p>';
         return;
       }
 
-      // 글자 일부만 포함되어도 전부 찾아주는 필터 엔진
-      const matches = dictionaryDatabase.filter(item => item.word.includes(keyword));
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">실시간 사전 데이터 가져오는 중...</p>';
 
-      if (matches.length === 0) {
-        resultDiv.innerHTML = `
-          <p class="error-msg">'${keyword}'에 대한 검색 결과가 없습니다.</p>
-          <p style="text-align:center; font-size:13px; color:#888;">데이터베이스에 입력된 단어(사랑, 나무, 하늘 등)를 검색해 보세요!</p>
-        `;
-        return;
-      }
+      // 기존에 생성되어 있던 API 호출용 스크립트 태그가 있다면 삭제
+      const oldScript = document.getElementById('dictApiScript');
+      if (oldScript) oldScript.remove();
 
-      let htmlContent = '';
-      matches.forEach(item => {
-        htmlContent += `
-          <div class="word-item">
-            <span class="word-title">${item.word}</span>
-            <span class="pos">${item.pos}</span>
-            <div class="definition">${item.definition}</div>
-          </div>
-        `;
-      });
+      // JSONP 방식을 활용하여 위키낱말사전 실시간 데이터 요청 API URL 생성 (CORS 완전 회피)
+      const apiUrl = `https://wiktionary.org{encodeURIComponent(word)}&callback=handleDictionaryResponse`;
 
-      resultDiv.innerHTML = htmlContent;
+      // 브라우저 SOP 정책을 완전히 우회하기 위해 <script src="API주소"> 태그 삽입
+      const script = document.createElement('script');
+      script.id = 'dictApiScript';
+      script.src = apiUrl;
+      
+      // 태그를 헤더에 붙여 실제 통신 실행
+      document.head.appendChild(script);
     }
   </script>
 
