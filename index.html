@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>실시간 한국어 사전</title>
+  <title>실시간 한국어 사전 앱</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -27,7 +27,7 @@
     <h1>📖 실시간 한국어 사전</h1>
     
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요 (예: 하늘, 바다, 컴퓨터)" onkeypress="if(event.keyCode==13) searchWord()">
+      <input type="text" id="wordInput" placeholder="검색할 단어를 입력하세요 (예: 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchWord()">
       <button onclick="searchWord()">검색</button>
     </div>
 
@@ -35,7 +35,7 @@
   </div>
 
   <script>
-    // 1. 서버에서 돌아온 사전 데이터를 안전하게 받아 화면에 그리는 글로벌 함수
+    // 1. 서버에서 전달된 단어 데이터를 안전하게 받아 화면에 그리는 글로벌 콜백 함수 (JSONP)
     window.onDictionaryLoad = function(data) {
       const resultDiv = document.getElementById('result');
       
@@ -45,16 +45,16 @@
       }
 
       const pages = data.query.pages;
-      const pageId = Object.keys(pages)[0];
+      const pageId = Object.keys(pages);
 
-      // 존재하지 않는 단어일 경우 서버가 -1을 보냄
-      if (pageId === "-1") {
+      // 단어가 사전에 존재하지 않을 때 (-1 리턴)
+      if (pageId[0] === "-1") {
         resultDiv.innerHTML = '<p class="error-msg">사전에서 검색 결과를 찾을 수 없습니다.</p>';
         return;
       }
 
-      const title = pages[pageId].title;
-      const extract = pages[pageId].extract;
+      const title = pages[pageId[0]].title;
+      const extract = pages[pageId[0]].extract;
 
       if (!extract) {
         resultDiv.innerHTML = '<p class="error-msg">단어 정의 데이터가 비어있습니다.</p>';
@@ -69,7 +69,7 @@
       `;
     };
 
-    // 2. 검색 버튼을 누르면 브라우저 제약을 완벽히 뚫는 스크립트 통신을 유도하는 함수
+    // 2. 검색 시 브라우저 차단막(CORS)을 회피하여 데이터를 원격 호출하는 스크립트 주입 함수
     function searchWord() {
       const word = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
@@ -79,17 +79,17 @@
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">데이터를 가져오는 중...</p>';
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">실시간 사전 데이터를 가져오는 중...</p>';
 
-      // 이전에 생성된 통신용 스크립트 엘리먼트 찌꺼기 제거
+      // 기존에 남아있던 가상 통신용 스크립트 노드 제거
       const prevScript = document.getElementById('dictQueryScript');
       if (prevScript) prevScript.remove();
 
-      // 💡 fetch의 보안 한계를 완전 우회하기 위해 callback 파라미터를 붙인 JSONP 전용 API 주소 조합
+      // 💡 일반 fetch 요청 시 차단당하므로, 브라우저가 승인하는 전 세계 공용 JSONP(Callback) 단독 API 규격 사용
       const encodedWord = encodeURIComponent(word);
       const targetUrl = `https://wiktionary.org{encodedWord}&callback=onDictionaryLoad`;
 
-      // 가상 스크립트 노드를 헤더에 강제 주입해 브라우저 SOP 차단막을 우회 통과시킴
+      // 가상 스크립트 엘리먼트를 헤더에 주입하여 통신을 원격지로 강제 연결
       const scriptNode = document.createElement('script');
       scriptNode.id = 'dictQueryScript';
       scriptNode.src = targetUrl;
