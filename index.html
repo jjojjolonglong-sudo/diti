@@ -3,83 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>나만의 한국어 사전</title>
+  <title>인터넷이 필요 없는 한국어 사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #333; margin-bottom: 25px; }
     .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
     input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-    input:focus { border-color: #007bff; }
-    button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    button:hover { background-color: #0056b3; }
+    input:focus { border-color: #28a745; }
+    button { padding: 12px 24px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #218838; }
     #result { line-height: 1.6; color: #444; }
     .word-item { border-bottom: 1px solid #eee; padding: 15px 0; }
     .word-item:last-child { border: none; }
     .word-title { font-size: 20px; font-weight: bold; color: #111; display: inline-block; margin-right: 10px; }
+    .pos { font-size: 14px; color: #007bff; font-weight: bold; background: #e7f1ff; padding: 2px 6px; border-radius: 4px; }
     .definition { margin-top: 8px; color: #555; white-space: pre-line; }
+    .info-msg { text-align: center; color: #666; font-size: 14px; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>📖 한국어 사전 앱</h1>
+    <h1>💚 번개 한국어 사전 (내장형)</h1>
+    <p class="info-msg">인터넷 연결이나 API 승인 없이 즉시 구동되는 안전한 사전입니다.</p>
+    
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요" onkeypress="if(event.keyCode==13) searchKoreanWord()">
-      <button onclick="searchKoreanWord()">검색</button>
+      <input type="text" id="wordInput" placeholder="단어를 입력하세요 (예: 사랑, 나무, 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchLocalWord()">
+      <button onclick="searchLocalWord()">검색</button>
     </div>
 
     <div id="result"></div>
   </div>
 
   <script>
-    async function searchKoreanWord() {
-      const word = document.getElementById('wordInput').value.trim();
+    // 💾 앱 내부에 영구 저장된 단어 데이터베이스 (원하는 만큼 아래 양식대로 무한 추가 가능)
+    const dictionaryDatabase = [
+      { word: "사랑", pos: "명정", definition: "어떤 사람이나 존재를 몹시 아끼고 귀중히 여기는 마음. 또는 그런 상태." },
+      { word: "나무", pos: "명사", definition: "줄기나 가지가 단단하고 매년 자라는 여러해살이 식물." },
+      { word: "하늘", pos: "명사", definition: "지구 위를 둘러싸고 있는 끝없는 공간. 푸르게 보이는 대기권 공간." },
+      { word: "컴퓨터", pos: "명사", definition: "전자 회로를 이용하여 대량의 데이터를 고속으로 자동 처리하는 기계." },
+      { word: "바다", pos: "명사", definition: "지구 위에서 짠물이 고여 있는 아주 넓고 큰 곳." },
+      { word: "행복", pos: "명사", definition: "생활에서 기쁨과 만족을 느껴 흐뭇한 상태." },
+      { word: "친구", pos: "명사", definition: "가깝게 오래 사귄 사람. 또는 나이가 비슷하여 친하게 지내는 사람." },
+      { word: "학습", pos: "명사", definition: "배우고 익혀서 지식이나 기술을 자기 것으로 만드는 과정." }
+    ];
+
+    function searchLocalWord() {
+      const keyword = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
       
-      if (!word) {
+      if (!keyword) {
         resultDiv.innerHTML = '<p class="error-msg">단어를 입력해주세요.</p>';
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">검색 중...</p>';
+      // 내장된 데이터베이스에서 사용자가 입력한 단어가 포함되어 있는지 검색 (글자 일부만 맞아도 검색됨)
+      const matches = dictionaryDatabase.filter(item => item.word.includes(keyword));
 
-      // 위키낱말사전 Open API (CORS 우회를 위해 origin=* 파라미터 사용)
-      const apiUrl = `https://wiktionary.org{encodeURIComponent(word)}&origin=*`;
-
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('네트워크 응답에 문제가 있습니다.');
-
-        const data = await response.json();
-        const pages = data.query.pages;
-        const pageId = Object.keys(pages)[0];
-
-        // 해당 단어 페이지가 없거나 결과가 정상적이지 않을 때 (-1은 페이지 없음 의미)
-        if (pageId === "-1") {
-          resultDiv.innerHTML = '<p class="error-msg">사전에서 검색 결과를 찾을 수 없습니다.</p>';
-          return;
-        }
-
-        const extract = pages[pageId].extract;
-        if (!extract) {
-          resultDiv.innerHTML = '<p class="error-msg">단어의 정의가 비어있습니다.</p>';
-          return;
-        }
-
-        // 결과 화면 구성
+      if (matches.length === 0) {
         resultDiv.innerHTML = `
+          <p class="error-msg">'${keyword}'에 대한 검색 결과가 없습니다.</p>
+          <p style="text-align:center; font-size:13px; color:#888;">스크립트 코드 내의 'dictionaryDatabase'에 단어를 추가해 보세요!</p>
+        `;
+        return;
+      }
+
+      // 결과 화면 그리기
+      let htmlContent = '';
+      matches.forEach(item => {
+        htmlContent += `
           <div class="word-item">
-            <span class="word-title">${pages[pageId].title}</span>
-            <div class="definition">${extract}</div>
+            <span class="word-title">${item.word}</span>
+            <span class="pos">${item.pos}</span>
+            <div class="definition">${item.definition}</div>
           </div>
         `;
+      });
 
-      } catch (error) {
-        console.error(error);
-        resultDiv.innerHTML = '<p class="error-msg">네트워크 연결에 실패했거나 데이터를 가져오지 못했습니다.</p>';
-      }
+      resultDiv.innerHTML = htmlContent;
     }
   </script>
 
