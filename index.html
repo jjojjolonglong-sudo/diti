@@ -3,99 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>실시간 한국어 사전</title>
+  <title>국립국어원 표준국어대사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #333; margin-bottom: 25px; }
+    
+    /* API 설정 영역 */
+    .api-settings { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+    .api-settings.active { display: block; }
+    .api-input-group { display: flex; gap: 8px; margin-top: 8px; }
+    .toggle-api-btn { background: none; border: none; color: #007bff; cursor: pointer; font-size: 14px; padding: 0; margin-bottom: 15px; text-decoration: underline; }
+    
+    /* 검색창 및 결과 영역 */
     .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
     input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
     input:focus { border-color: #007bff; }
     button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     button:hover { background-color: #0056b3; }
+    .secondary-btn { background-color: #6c757d; }
+    
     #result { line-height: 1.6; color: #444; }
-    .word-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+    .word-item { border-bottom: 1px solid #eee; padding: 20px 0; }
     .word-item:last-child { border: none; }
-    .word-title { font-size: 24px; font-weight: bold; color: #007bff; display: inline-block; margin-bottom: 10px; }
-    .definition { font-size: 16px; color: #333; white-space: pre-line; }
+    .word-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .word-title { font-size: 22px; font-weight: bold; color: #111; }
+    .pos { font-size: 13px; color: #28a745; font-weight: bold; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; }
+    .definition { font-size: 15px; color: #444; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
+    .status-msg { text-align: center; color: #28a745; font-size: 14px; margin-top: 5px; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>📖 실시간 한국어 사전 앱</h1>
+    <h1>📖 표준국어대사전</h1>
     
+    <!-- 인증키 설정 창 -->
+    <button class="toggle-api-btn" onclick="toggleApiSettings()">⚙️ 국립국어원 API 인증키 등록</button>
+    <div id="apiSettingsArea" class="api-settings">
+      <label for="apiKeyInput" style="font-weight: bold; font-size: 14px;">공공데이터포털 표준국어대사전 인증키(Encoding/Decoding)</label>
+      <div class="api-input-group">
+        <input type="password" id="apiKeyInput" placeholder="발급받은 서비스키를 입력하세요">
+        <button class="secondary-btn" onclick="saveApiKey()">저장</button>
+      </div>
+      <div id="apiStatus" class="status-msg"></div>
+    </div>
+
+    <!-- 검색창 -->
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 실제 한국어 단어를 입력하세요" onkeypress="if(event.keyCode==13) searchWord()">
+      <input type="text" id="wordInput" placeholder="검색할 정식 한국어 단어를 입력하세요" onkeypress="if(event.keyCode==13) searchWord()">
       <button onclick="searchWord()">검색</button>
     </div>
 
+    <!-- 결과 창 -->
     <div id="result"></div>
   </div>
 
   <script>
-    // 1. JSONP 응답을 처리할 글로벌 전역 콜백 함수 정의 (CORS 해결 핵심)
-    window.handleDictionaryResponse = function(data) {
-      const resultDiv = document.getElementById('result');
-      
-      if (!data || !data.query || !data.query.pages) {
-        resultDiv.innerHTML = '<p class="error-msg">데이터 처리 중 오류가 발생했습니다.</p>';
-        return;
+    // 페이지 로드 시 기존 저장된 API 키 불러오기
+    window.onload = function() {
+      const savedKey = localStorage.getItem('stdict_api_key');
+      if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+        document.getElementById('apiStatus').innerText = '🔑 인증키가 로드되었습니다.';
+      } else {
+        toggleApiSettings();
+        document.getElementById('apiStatus').innerText = '⚠️ 사전을 이용하려면 국립국어원 인증키를 먼저 입력해주세요.';
+        document.getElementById('apiStatus').style.color = '#dc3545';
       }
-
-      const pages = data.query.pages;
-      const pageId = Object.keys(pages)[0];
-
-      // 검색한 단어 페이지가 사전에 없는 경우 (-1 반환)
-      if (pageId === "-1") {
-        resultDiv.innerHTML = '<p class="error-msg">사전에서 검색 결과를 찾을 수 없습니다.</p>';
-        return;
-      }
-
-      const title = pages[pageId].title;
-      const extract = pages[pageId].extract;
-
-      if (!extract) {
-        resultDiv.innerHTML = '<p class="error-msg">단어 정의 데이터가 비어있습니다.</p>';
-        return;
-      }
-
-      // 화면에 실시간 오픈 API 데이터 출력
-      resultDiv.innerHTML = `
-        <div class="word-item">
-          <div class="word-title">${title}</div>
-          <div class="definition">${extract}</div>
-        </div>
-      `;
     };
 
-    // 2. 검색 시 동적으로 <script> 태그를 생성해 원격 API를 호출하는 함수
-    function searchWord() {
+    function toggleApiSettings() {
+      document.getElementById('apiSettingsArea').classList.toggle('active');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) return alert('키를 입력해주세요.');
+      localStorage.setItem('stdict_api_key', key);
+      document.getElementById('apiStatus').innerText = '✅ 인증키 저장 완료!';
+      document.getElementById('apiStatus').style.color = '#28a745';
+      setTimeout(() => { toggleApiSettings(); }, 1000);
+    }
+
+    // 국립국어원 정식 API 실시간 호출 함수
+    async function searchWord() {
       const word = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
+      const apiKey = localStorage.getItem('stdict_api_key');
       
+      if (!apiKey) {
+        resultDiv.innerHTML = '<p class="error-msg">인증키가 등록되지 않았습니다. 상단에서 키를 등록해 주세요.</p>';
+        return;
+      }
       if (!word) {
         resultDiv.innerHTML = '<p class="error-msg">단어를 입력해주세요.</p>';
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">실시간 사전 데이터 가져오는 중...</p>';
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">국립국어원 서버에서 정식 데이터를 조회 중입니다...</p>';
 
-      // 기존에 생성되어 있던 API 호출용 스크립트 태그가 있다면 삭제
-      const oldScript = document.getElementById('dictApiScript');
-      if (oldScript) oldScript.remove();
+      // 공공데이터포털 경유 표준국어대사전 정식 오픈 API 엔드포인트 URL
+      const apiUrl = `https://data.go.kr{apiKey}&q=${encodeURIComponent(word)}&type_search=search&req_type=json`;
 
-      // JSONP 방식을 활용하여 위키낱말사전 실시간 데이터 요청 API URL 생성 (CORS 완전 회피)
-      const apiUrl = `https://wiktionary.org{encodeURIComponent(word)}&callback=handleDictionaryResponse`;
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('서버 응답 오류');
 
-      // 브라우저 SOP 정책을 완전히 우회하기 위해 <script src="API주소"> 태그 삽입
-      const script = document.createElement('script');
-      script.id = 'dictApiScript';
-      script.src = apiUrl;
-      
-      // 태그를 헤더에 붙여 실제 통신 실행
-      document.head.appendChild(script);
+        const data = await response.json();
+        
+        // 국립국어원 표준 데이터 검증
+        if (!data.channel || !data.channel.item || data.channel.item.length === 0) {
+          resultDiv.innerHTML = '<p class="error-msg">표준국어대사전에 등재되지 않은 단어이거나 결과가 없습니다.</p>';
+          return;
+        }
+
+        let htmlContent = '';
+        const items = data.channel.item;
+        const displayLimit = Math.min(items.length, 5); // 최대 5개 출력
+
+        for (let i = 0; i < displayLimit; i++) {
+          const item = items[i];
+          const wordName = item.word || '단어 정보 없음';
+          const pos = item.pos || '품사 없음';
+          const definition = item.sense?.definition || '뜻 정보가 없습니다.';
+
+          htmlContent += `
+            <div class="word-item">
+              <div class="word-header">
+                <span class="word-title">${wordName}</span>
+                <span class="pos">${pos}</span>
+              </div>
+              <div class="definition">${definition}</div>
+            </div>
+          `;
+        }
+
+        resultDiv.innerHTML = htmlContent;
+
+      } catch (error) {
+        console.error(error);
+        resultDiv.innerHTML = '<p class="error-msg">국립국어원 정식 데이터를 가져오는 데 실패했습니다. API 키(인증키) 상태를 확인해 주세요.</p>';
+      }
     }
   </script>
 
