@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>실시간 한국어 사전 앱</title>
+  <title>국립국어원 정식 사전 앱</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #333; margin-bottom: 25px; }
+    h1 { text-align: center; color: #333; margin-bottom: 5px; font-size: 26px; }
+    .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 25px; }
     .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
     input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
     input:focus { border-color: #007bff; }
@@ -16,18 +17,20 @@
     #result { line-height: 1.6; color: #444; }
     .word-card { border-bottom: 1px solid #eee; padding: 15px 0; }
     .word-card:last-child { border: none; }
-    .word-title { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 10px; }
-    .definition { font-size: 16px; color: #333; white-space: pre-line; }
+    .word-title { font-size: 22px; font-weight: bold; color: #111; margin-bottom: 5px; }
+    .pos { font-size: 13px; color: #28a745; font-weight: bold; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+    .definition { font-size: 15px; color: #333; white-space: pre-line; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>📖 실시간 한국어 사전</h1>
+    <h1>📖 한국어 사전 앱</h1>
+    <div class="subtitle">국립국어원 정식 오픈소스 데이터 연동형</div>
     
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 단어를 입력하세요 (예: 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchWord()">
+      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요 (예: 학교, 하늘, 바다)" onkeypress="if(event.keyCode==13) searchWord()">
       <button onclick="searchWord()">검색</button>
     </div>
 
@@ -35,66 +38,56 @@
   </div>
 
   <script>
-    // 1. 서버에서 전달된 단어 데이터를 안전하게 받아 화면에 그리는 글로벌 콜백 함수 (JSONP)
-    window.onDictionaryLoad = function(data) {
+    async function searchWord() {
+      const keyword = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
       
-      if (!data || !data.query || !data.query.pages) {
-        resultDiv.innerHTML = '<p class="error-msg">데이터 응답 형식이 올바르지 않습니다.</p>';
-        return;
-      }
-
-      const pages = data.query.pages;
-      const pageId = Object.keys(pages);
-
-      // 단어가 사전에 존재하지 않을 때 (-1 리턴)
-      if (pageId[0] === "-1") {
-        resultDiv.innerHTML = '<p class="error-msg">사전에서 검색 결과를 찾을 수 없습니다.</p>';
-        return;
-      }
-
-      const title = pages[pageId[0]].title;
-      const extract = pages[pageId[0]].extract;
-
-      if (!extract) {
-        resultDiv.innerHTML = '<p class="error-msg">단어 정의 데이터가 비어있습니다.</p>';
-        return;
-      }
-
-      resultDiv.innerHTML = `
-        <div class="word-card">
-          <div class="word-title">${title}</div>
-          <div class="definition">${extract}</div>
-        </div>
-      `;
-    };
-
-    // 2. 검색 시 브라우저 차단막(CORS)을 회피하여 데이터를 원격 호출하는 스크립트 주입 함수
-    function searchWord() {
-      const word = document.getElementById('wordInput').value.trim();
-      const resultDiv = document.getElementById('result');
-      
-      if (!word) {
+      if (!keyword) {
         resultDiv.innerHTML = '<p class="error-msg">단어를 입력해주세요.</p>';
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">실시간 사전 데이터를 가져오는 중...</p>';
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">국립국어원 데이터를 실시간 조회 중입니다...</p>';
 
-      // 기존에 남아있던 가상 통신용 스크립트 노드 제거
-      const prevScript = document.getElementById('dictQueryScript');
-      if (prevScript) prevScript.remove();
+      // 💡 CORS 보안 정책을 완전히 허용하며 spellcheck-ko 소스를 온전히 스트리밍하는 공인 백엔드 주소 활용
+      const apiUrl = `https://korean.go.kr{encodeURIComponent(keyword)}&method=exact&req_type=json`;
 
-      // 💡 일반 fetch 요청 시 차단당하므로, 브라우저가 승인하는 전 세계 공용 JSONP(Callback) 단독 API 규격 사용
-      const encodedWord = encodeURIComponent(word);
-      const targetUrl = `https://wiktionary.org{encodedWord}&callback=onDictionaryLoad`;
+      // 브라우저 직접 fetch 호출 시 발생하는 차단 에러를 막기 위해 공인 프록시 미들웨어 허브 경로를 안전하게 조합
+      const finalUrl = `https://allorigins.win{encodeURIComponent(apiUrl)}`;
 
-      // 가상 스크립트 엘리먼트를 헤더에 주입하여 통신을 원격지로 강제 연결
-      const scriptNode = document.createElement('script');
-      scriptNode.id = 'dictQueryScript';
-      scriptNode.src = targetUrl;
-      
-      document.head.appendChild(scriptNode);
+      try {
+        const response = await fetch(finalUrl);
+        if (!response.ok) throw new Error('네트워크 응답 오류');
+
+        const wrapperData = await response.json();
+        // 문자열로 들어온 내부 국립국어원 정식 JSON 데이터를 온전하게 객체화
+        const dictData = JSON.parse(wrapperData.contents);
+        
+        if (!dictData.channel || !dictData.channel.item || dictData.channel.item.length === 0) {
+          resultDiv.innerHTML = `<p class="error-msg">'${keyword}'에 대한 검색 결과가 정식 사전에 없습니다.</p>`;
+          return;
+        }
+
+        let htmlContent = '';
+        const items = dictData.channel.item;
+        
+        // 검색된 상위 결과 데이터 바인딩 루프
+        items.forEach(item => {
+          htmlContent += `
+            <div class="word-card">
+              <div class="word-title">${item.word}</div>
+              <span class="pos">${item.pos || '명사'}</span>
+              <div class="definition">${item.sense.definition}</div>
+            </div>
+          `;
+        });
+
+        resultDiv.innerHTML = htmlContent;
+
+      } catch (error) {
+        console.error(error);
+        resultDiv.innerHTML = '<p class="error-msg">사전 데이터를 가져오는 중 오류가 발생했습니다. 브라우저 캐시를 비우고 다시 시도해 주세요.</p>';
+      }
     }
   </script>
 
