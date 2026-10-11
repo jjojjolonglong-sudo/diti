@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>인터넷이 필요 없는 한국어 사전</title>
+  <title>번개 한국어 사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -19,15 +19,15 @@
     .word-title { font-size: 20px; font-weight: bold; color: #111; display: inline-block; margin-right: 10px; }
     .pos { font-size: 14px; color: #007bff; font-weight: bold; background: #e7f1ff; padding: 2px 6px; border-radius: 4px; }
     .definition { margin-top: 8px; color: #555; white-space: pre-line; }
-    .info-msg { text-align: center; color: #666; font-size: 14px; }
+    .info-msg { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>💚 번개 한국어 사전 (내장형)</h1>
-    <p class="info-msg">인터넷 연결이나 API 승인 없이 즉시 구동되는 안전한 사전입니다.</p>
+    <h1>💚 번개 한국어 사전</h1>
+    <p class="info-msg">GitHub Pages 서버 환경에서 완벽하게 단독 구동되는 사전입니다.</p>
     
     <div class="search-box">
       <input type="text" id="wordInput" placeholder="단어를 입력하세요 (예: 사랑, 나무, 하늘, 컴퓨터)" onkeypress="if(event.keyCode==13) searchLocalWord()">
@@ -38,9 +38,9 @@
   </div>
 
   <script>
-    // 💾 앱 내부에 영구 저장된 단어 데이터베이스 (원하는 만큼 아래 양식대로 무한 추가 가능)
+    // 💾 고장 나지 않는 내부 데이터베이스 (여기에 필요한 단어들을 계속 누적할 수 있습니다)
     const dictionaryDatabase = [
-      { word: "사랑", pos: "명정", definition: "어떤 사람이나 존재를 몹시 아끼고 귀중히 여기는 마음. 또는 그런 상태." },
+      { word: "사랑", pos: "명사", definition: "어떤 사람이나 존재를 몹시 아끼고 귀중히 여기는 마음. 또는 그런 상태." },
       { word: "나무", pos: "명사", definition: "줄기나 가지가 단단하고 매년 자라는 여러해살이 식물." },
       { word: "하늘", pos: "명사", definition: "지구 위를 둘러싸고 있는 끝없는 공간. 푸르게 보이는 대기권 공간." },
       { word: "컴퓨터", pos: "명사", definition: "전자 회로를 이용하여 대량의 데이터를 고속으로 자동 처리하는 기계." },
@@ -59,18 +59,17 @@
         return;
       }
 
-      // 내장된 데이터베이스에서 사용자가 입력한 단어가 포함되어 있는지 검색 (글자 일부만 맞아도 검색됨)
+      // 글자 일부만 포함되어도 전부 찾아주는 필터 엔진
       const matches = dictionaryDatabase.filter(item => item.word.includes(keyword));
 
       if (matches.length === 0) {
         resultDiv.innerHTML = `
           <p class="error-msg">'${keyword}'에 대한 검색 결과가 없습니다.</p>
-          <p style="text-align:center; font-size:13px; color:#888;">스크립트 코드 내의 'dictionaryDatabase'에 단어를 추가해 보세요!</p>
+          <p style="text-align:center; font-size:13px; color:#888;">데이터베이스에 입력된 단어(사랑, 나무, 하늘 등)를 검색해 보세요!</p>
         `;
         return;
       }
 
-      // 결과 화면 그리기
       let htmlContent = '';
       matches.forEach(item => {
         htmlContent += `
