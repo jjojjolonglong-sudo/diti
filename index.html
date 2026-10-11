@@ -42,7 +42,7 @@
     <!-- API 설정 토글 버튼 -->
     <button class="toggle-api-btn" onclick="toggleApiSettings()">⚙️ API 인증키 설정 관리</button>
 
-    <!-- API 설정 창 (기본 숨김 상태) -->
+    <!-- API 설정 창 -->
     <div id="apiSettingsArea" class="api-settings">
       <label for="apiKeyInput" style="font-weight: bold; font-size: 14px;">국립국어원 Open API Key</label>
       <div class="api-input-group">
@@ -63,27 +63,24 @@
   </div>
 
   <script>
-    // 앱이 켜질 때 브라우저 저장소(localStorage)에서 API 키를 불러옵니다.
     window.onload = function() {
       const savedKey = localStorage.getItem('korean_dict_api_key');
       if (savedKey) {
         document.getElementById('apiKeyInput').value = savedKey;
         document.getElementById('apiStatus').innerText = '🔑 API 키가 안전하게 로드되었습니다.';
+        document.getElementById('apiStatus').style.color = '#28a745';
       } else {
-        // API 키가 없으면 사용자가 바로 입력할 수 있게 설정 창을 열어줍니다.
         toggleApiSettings();
         document.getElementById('apiStatus').innerText = '⚠️ 사전을 이용하려면 API 키를 먼저 입력하고 저장해주세요.';
         document.getElementById('apiStatus').style.color = '#dc3545';
       }
     };
 
-    // API 설정 영역을 접고 펴는 함수
     function toggleApiSettings() {
       const area = document.getElementById('apiSettingsArea');
       area.classList.toggle('active');
     }
 
-    // 입력한 API 키를 브라우저에 반영구 저장하는 함수
     function saveApiKey() {
       const key = document.getElementById('apiKeyInput').value.trim();
       const status = document.getElementById('apiStatus');
@@ -97,20 +94,16 @@
       status.innerText = '✅ API 키가 성공적으로 저장되었습니다!';
       status.style.color = '#28a745';
       
-      // 저장 후 1초 뒤 설정창을 자동으로 닫아줍니다.
       setTimeout(() => { toggleApiSettings(); }, 1000);
     }
 
-    // 단어 검색 함수
     async function searchKoreanWord() {
       const word = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
-      
-      // 저장소에서 API 키 가져오기
       const apiKey = localStorage.getItem('korean_dict_api_key');
       
       if (!apiKey) {
-        resultDiv.innerHTML = '<p class="error-msg">API 인증키가 없습니다. 상단의 설정 메뉴를 열어 키를 등록해 주세요.</p>';
+        resultDiv.innerHTML = '<p class="error-msg">API 인증키가 없습니다. 설정 메뉴를 열어 키를 등록해 주세요.</p>';
         toggleApiSettings();
         return;
       }
@@ -122,6 +115,7 @@
 
       resultDiv.innerHTML = '<p style="text-align:center; color:#666;">검색 중...</p>';
 
+      // 주소 조합 오류 해결: 올바른 API URL과 CORS 프록시 주소 지정
       const proxyUrl = 'https://herokuapp.com';
       const targetUrl = `https://korean.go.kr{apiKey}&q=${encodeURIComponent(word)}&part=word&sort=popular`;
 
@@ -144,25 +138,25 @@
         const displayLimit = Math.min(items.length, 5);
         
         for (let i = 0; i < displayLimit; i++) {
-  const item = items[i];
-  
-  // 요소가 존재할 때만 textContent를 가져오도록 안전하게 처리
-  const wordNameEl = item.getElementsByTagName("word")[0];
-  const posEl = item.getElementsByTagName("pos")[0];
-  const definitionEl = item.getElementsByTagName("definition")[0];
+          const item = items[i];
+          
+          // 데이터 파싱 안정성 보강 (Node 존재 여부 체크 후 가져오기)
+          const wordNode = item.getElementsByTagName("word")[0];
+          const posNode = item.getElementsByTagName("pos")[0];
+          const defNode = item.getElementsByTagName("definition")[0];
 
-  const wordName = wordNameEl ? wordNameEl.textContent : '단어 없음';
-  const pos = posEl ? posEl.textContent : '품사 없음';
-  const definition = definitionEl ? definitionEl.textContent : '뜻 없음';
+          const wordName = wordNode ? wordNode.textContent : '단어 정보 없음';
+          const pos = posNode ? posNode.textContent : '품사 없음';
+          const definition = defNode ? defNode.textContent : '뜻 정의 없음';
 
-  htmlContent += `
-    <div class="word-item">
-      <span class="word-title">${wordName}</span>
-      <span class="pos">${pos}</span>
-      <div class="definition">${definition}</div>
-    </div>
-  `;
-}
+          htmlContent += `
+            <div class="word-item">
+              <span class="word-title">${wordName}</span>
+              <span class="pos">${pos}</span>
+              <div class="definition">${definition}</div>
+            </div>
+          `;
+        }
 
         resultDiv.innerHTML = htmlContent;
 
@@ -170,7 +164,7 @@
         console.error(error);
         resultDiv.innerHTML = `
           <p class="error-msg">데이터를 가져오는 중 오류가 발생했습니다.</p>
-          <p style="font-size:12px; color:#999; text-align:center;">API 키가 올바른지 확인하거나, CORS 데모 서버가 활성화되어 있는지 확인해 주세요.</p>
+          <p style="font-size:12px; color:#999; text-align:center;">API 키가 올바른지 확인하거나, <a href="https://herokuapp.comcorsdemo" target="_blank" style="color:#007bff; font-weight:bold;">CORS 데모 페이지</a>에 접속해 'Request temporary access...' 버튼을 클릭했는지 확인해 주세요.</p>
         `;
       }
     }
