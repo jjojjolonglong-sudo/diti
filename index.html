@@ -144,19 +144,25 @@
         const displayLimit = Math.min(items.length, 5);
         
         for (let i = 0; i < displayLimit; i++) {
-          const item = items[i];
-          const wordName = item.getElementsByTagName("word")[0]?.textContent || '';
-          const pos = item.getElementsByTagName("pos")[0]?.textContent || '품사 없음';
-          const definition = item.getElementsByTagName("definition")[0]?.textContent || '';
+  const item = items[i];
+  
+  // 요소가 존재할 때만 textContent를 가져오도록 안전하게 처리
+  const wordNameEl = item.getElementsByTagName("word")[0];
+  const posEl = item.getElementsByTagName("pos")[0];
+  const definitionEl = item.getElementsByTagName("definition")[0];
 
-          htmlContent += `
-            <div class="word-item">
-              <span class="word-title">${wordName}</span>
-              <span class="pos">${pos}</span>
-              <div class="definition">${definition}</div>
-            </div>
-          `;
-        }
+  const wordName = wordNameEl ? wordNameEl.textContent : '단어 없음';
+  const pos = posEl ? posEl.textContent : '품사 없음';
+  const definition = definitionEl ? definitionEl.textContent : '뜻 없음';
+
+  htmlContent += `
+    <div class="word-item">
+      <span class="word-title">${wordName}</span>
+      <span class="pos">${pos}</span>
+      <div class="definition">${definition}</div>
+    </div>
+  `;
+}
 
         resultDiv.innerHTML = htmlContent;
 
