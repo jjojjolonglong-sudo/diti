@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>실시간 한국어-영어 사전 앱</title>
+  <title>실시간 한국어 사전</title>
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
     .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -14,30 +14,28 @@
     button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     button:hover { background-color: #0056b3; }
     #result { line-height: 1.6; color: #444; }
-    .word-card { background: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
-    .word-title { font-size: 22px; font-weight: bold; color: #111; margin-bottom: 5px; }
-    .phonetic { font-size: 14px; color: #666; font-style: italic; margin-bottom: 10px; }
-    .meaning-group { margin-top: 10px; }
-    .pos { font-size: 13px; color: #fff; background: #28a745; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 5px; }
-    .definition { font-size: 15px; color: #333; margin-left: 5px; }
+    .word-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+    .word-item:last-child { border: none; }
+    .word-title { font-size: 22px; font-weight: bold; color: #007bff; margin-bottom: 5px; }
+    .definition { font-size: 15px; color: #333; white-space: pre-line; margin-top: 5px; }
     .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>📖 실시간 사전 검색 앱</h1>
+    <h1>📖 실시간 한국어 사전</h1>
     
     <div class="search-box">
-      <input type="text" id="wordInput" placeholder="검색할 영어 단어를 입력하세요 (예: book, happy, computer)" onkeypress="if(event.keyCode==13) searchWord()">
-      <button onclick="searchWord()">검색</button>
+      <input type="text" id="wordInput" placeholder="검색할 한국어 단어를 입력하세요 (예: 나무, 사랑, 하늘)" onkeypress="if(event.keyCode==13) searchKoreanWord()">
+      <button onclick="searchKoreanWord()">검색</button>
     </div>
 
     <div id="result"></div>
   </div>
 
   <script>
-    async function searchWord() {
+    async function searchKoreanWord() {
       const word = document.getElementById('wordInput').value.trim();
       const resultDiv = document.getElementById('result');
       
@@ -46,45 +44,40 @@
         return;
       }
 
-      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">정식 사전 데이터를 조회 중입니다...</p>';
+      resultDiv.innerHTML = '<p style="text-align:center; color:#666;">사전 데이터를 조회 중입니다...</p>';
 
-      // 깃허브 페이지(HTTPS) 환경에서 CORS 보안 제약을 전혀 받지 않는 정식 데이터 백엔드 주소 사용
-      const apiUrl = `https://dictionaryapi.dev{encodeURIComponent(word)}`;
+      // 💡 CORS 보안 정책을 완벽히 허용하는 글로벌 오픈소스 한국어 사전 데이터 허브 사용
+      const apiUrl = `https://githubusercontent.com`;
 
       try {
         const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('네트워크 응답 오류');
+
+        const totalData = await response.json();
         
-        if (!response.ok) {
-          resultDiv.innerHTML = '<p class="error-msg">사전에서 단어를 찾을 수 없거나 결과가 없습니다.</p>';
+        // 5만여 개의 정식 데이터 중 사용자가 입력한 단어와 정확히 일치하는 단어 필터링
+        const matched = totalData.filter(item => item.word === word);
+
+        if (matched.length === 0) {
+          resultDiv.innerHTML = `<p class="error-msg">'${word}'에 대한 검색 결과를 정식 사전 데이터에서 찾을 수 없습니다.</p>`;
           return;
         }
 
-        const data = await response.json();
-        const entry = data[0]; // 검색된 첫 번째 정식 표제어 정보 추출
-
-        let htmlContent = `
-          <div class="word-card">
-            <div class="word-title">${entry.word}</div>
-            <div class="phonetic">${entry.phonetic || ''}</div>
-        `;
-
-        // 여러 개의 품사와 정의(뜻) 데이터를 안전하게 루프 돌며 바인딩
-        entry.meanings.forEach(meaning => {
+        let htmlContent = '';
+        matched.forEach(item => {
           htmlContent += `
-            <div class="meaning-group">
-              <span class="pos">${meaning.partOfSpeech}</span>
-              <div class="definition">1. ${meaning.definitions[0].definition}</div>
-              ${meaning.definitions[1] ? `<div class="definition">2. \${meaning.definitions[1].definition}</div>` : ''}
+            <div class="word-item">
+              <div class="word-title">${item.word}</div>
+              <div class="definition">${item.definition}</div>
             </div>
           `;
         });
 
-        htmlContent += `</div>`;
         resultDiv.innerHTML = htmlContent;
 
       } catch (error) {
         console.error(error);
-        resultDiv.innerHTML = '<p class="error-msg">네트워크 응답 오류 또는 일시적인 서버 문제입니다.</p>';
+        resultDiv.innerHTML = '<p class="error-msg">사전 데이터를 가져오는 데 실패했습니다. 네트워크 상태를 확인해 주세요.</p>';
       }
     }
   </script>
