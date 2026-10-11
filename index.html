@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICT</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 12px;
+        }
+
+        /* 220px 폭의 아날로그 종이 패드 디자인 */
+        .paper-pad {
+            width: 220px;
+            background-color: #fbf9f1;
+            background-image: repeating-linear-gradient(#fbf9f1, #fbf9f1 23px, #e8e3d5 24px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #dcd6c5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4cfc4;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="flex flex-col items-center">
+        <div class="paper-pad flex flex-col h-[380px]">
+            
+            <!-- 상단 헤더 -->
+            <div class="px-3 py-2 border-b border-gray-300 flex justify-between items-center bg-[#f5f2e6]">
+                <h1 class="text-xs font-bold text-gray-800 tracking-wider">KOREAN DICT</h1>
+                <button onclick="toggleSettings()" class="text-gray-500 hover:text-gray-800 text-xs px-1" title="설정">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+
+            <!-- API 키 설정 모달 (오버레이) -->
+            <div id="settings-modal" class="absolute inset-0 bg-[#fbf9f1] z-30 flex flex-col p-3 hidden">
+                <div class="flex justify-between items-center border-b border-gray-300 pb-2 mb-3">
+                    <span class="text-xs font-bold text-gray-800">API 키 설정</span>
+                    <button onclick="toggleSettings()" class="text-gray-500 hover:text-gray-800 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <p class="text-[11px] text-gray-600 mb-2 leading-relaxed">
+                    국립국어원 표준국어대사전 오픈 API 키를 입력하세요. 브라우저에 안전하게 저장됩니다.
+                </p>
+                <input type="text" id="api-key-input" placeholder="API Key 입력..." 
+                    class="w-full bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-800 mb-3 focus:outline-none focus:border-gray-500">
+                <button onclick="saveApiKey()" class="bg-slate-700 text-white rounded py-1 text-xs hover:bg-slate-800 transition">
+                    저장하기
+                </button>
+            </div>
+
+            <!-- 검색 결과 영역 -->
+            <div id="dict-result" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-800">
+                <div class="text-center text-gray-400 py-12 italic text-[11px]">
+                    단어를 입력하고 엔터를 누르세요.
+                </div>
+            </div>
+
+            <!-- 하단 검색 입력폼 -->
+            <form onsubmit="searchWord(event)" class="px-2 py-2 border-t border-gray-300 bg-[#f5f2e6] flex items-center">
+                <input type="text" id="word-input" placeholder="단어 검색..." required
+                    class="w-full bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none border-b border-dashed border-gray-400 pb-1">
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 저장된 API 키 확인
+        window.onload = function() {
+            const savedKey = localStorage.getItem('korean_dict_api_key');
+            if (!savedKey) {
+                // 키가 없으면 자동으로 설정 창 띄우기
+                document.getElementById('settings-modal').classList.remove('hidden');
+            } else {
+                document.getElementById('api-key-input').value = savedKey;
+            }
+        };
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                const savedKey = localStorage.getItem('korean_dict_api_key') || '';
+                document.getElementById('api-key-input').value = savedKey;
+            }
+        }
+
+        function saveApiKey() {
+            const keyInput = document.getElementById('api-key-input').value.trim();
+            if (!keyInput) {
+                alert('API 키를 입력해주세요.');
+                return;
+            }
+            localStorage.setItem('korean_dict_api_key', keyInput);
+            toggleSettings();
+            alert('API 키가 저장되었습니다!');
+        }
+
+        async function searchWord(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('word-input');
+            const query = inputEl.value.trim();
+            const resultContainer = document.getElementById('dict-result');
+            const apiKey = localStorage.getItem('korean_dict_api_key');
+
+            if (!query) return;
+
+            if (!apiKey) {
+                resultContainer.innerHTML = `<div class="text-red-500 text-center py-6 text-[11px]">우측 상단 ⚙️ 아이콘을 눌러 API 키를 먼저 입력해주세요.</div>`;
+                toggleSettings();
+                return;
+            }
+
+            resultContainer.innerHTML = `<div class="text-center text-gray-400 py-12 text-[11px]"><i class="fa-solid fa-spinner fa-spin mr-1"></i>검색 중...</div>`;
+
+            const targetUrl = `https://stdict.korean.go.kr/api/search.do?key=${apiKey}&type_search=search&req_type=json&q=${encodeURIComponent(query)}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const rawText = await response.text();
+                let parsedItems = [];
+
+                try {
+                    const data = JSON.parse(rawText);
+                    const items = data?.channel?.item;
+                    if (items) {
+                        parsedItems = Array.isArray(items) ? items : [items];
+                    }
+                } catch (jsonErr) {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(rawText, "text/xml");
+                    const itemNodes = xmlDoc.getElementsByTagName("item");
+
+                    for (let i = 0; i < itemNodes.length; i++) {
+                        const node = itemNodes[i];
+                        const word = node.getElementsByTagName("word")[0]?.textContent || '';
+                        const pos = node.getElementsByTagName("pos")[0]?.textContent || '';
+                        const definition = node.getElementsByTagName("definition")[0]?.textContent || '';
+                        parsedItems.push({ word, sense: { pos, definition } });
+                    }
+                }
+
+                renderResult(parsedItems);
+
+            } catch (err) {
+                console.error('Dict fetch error:', err);
+                
+                try {
+                    const fallbackProxy = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+                    const res2 = await fetch(fallbackProxy);
+                    const json2 = await res2.json();
+                    
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(json2.contents, "text/xml");
+                    const itemNodes = xmlDoc.getElementsByTagName("item");
+
+                    const parsedItems = [];
+                    for (let i = 0; i < itemNodes.length; i++) {
+                        const node = itemNodes[i];
+                        const word = node.getElementsByTagName("word")[0]?.textContent || '';
+                        const pos = node.getElementsByTagName("pos")[0]?.textContent || '';
+                        const definition = node.getElementsByTagName("definition")[0]?.textContent || '';
+                        parsedItems.push({ word, sense: { pos, definition } });
+                    }
+                    renderResult(parsedItems);
+                } catch (fallbackErr) {
+                    resultContainer.innerHTML = `
+                        <div class="text-red-500 text-center py-6 text-[11px] leading-relaxed">
+                            검색 실패<br>
+                            <span class="text-[9px] text-gray-400">API 키가 올바른지 확인해주세요.</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderResult(items) {
+            const resultContainer = document.getElementById('dict-result');
+            resultContainer.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                resultContainer.innerHTML = `<div class="text-center text-gray-400 py-12 text-[11px]">검색 결과가 없습니다.</div>`;
+                return;
+            }
+
+            items.slice(0, 4).forEach(item => {
+                const word = item.word || item.title || '';
+                const sense = item.sense || {};
+                const definition = sense.definition || item.definition || '뜻 정보 없음';
+                const pos = sense.pos || item.pos || '';
+
+                const card = document.createElement('div');
+                card.className = 'border-b border-gray-200/80 pb-2 mb-2 last:border-none';
+                card.innerHTML = `
+                    <div class="font-bold text-gray-900 flex items-center justify-between">
+                        <span class="text-xs">${escapeHtml(word.replace(/[\^\-]/g, ''))}</span>
+                        ${pos ? `<span class="text-[9px] text-gray-500 font-normal">[${escapeHtml(pos)}]</span>` : ''}
+                    </div>
+                    <div class="text-[11px] text-gray-700 mt-0.5 leading-snug">
+                        ${escapeHtml(definition)}
+                    </div>
+                `;
+                resultContainer.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+    </script>
+</body>
+</html>
