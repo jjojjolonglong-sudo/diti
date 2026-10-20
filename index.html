@@ -105,7 +105,11 @@
     say(""); $("searchBtn").disabled = true; $("result").innerHTML = "";
     const { data, error } = await sb.functions.invoke("krdict", { body: { q } });
     $("searchBtn").disabled = false;
-    if (error || data?.error) return say("검색하지 못했습니다: " + (data?.error || error.message), "err");
+    if (error || data?.error) {
+      let detail = data?.error || error.message;
+      try { const b = await error.context.json(); detail = (b.error || b.message || JSON.stringify(b)) + " (상태 " + error.context.status + ")"; } catch (_) {}
+      return say("검색하지 못했습니다: " + detail, "err");
+    }
     if (!data.items.length) { $("result").innerHTML = `<p class="empty">'${esc(q)}' 검색 결과가 없습니다. 다른 단어로 찾아보세요.</p>`; return; }
     $("result").innerHTML = data.items.map((it) => `
       <div class="entry">
