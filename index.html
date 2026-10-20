@@ -1,95 +1,128 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>국립국어원 정식 사전 앱</title>
-  <style>
-    body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f7; margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .container { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #333; margin-bottom: 5px; font-size: 26px; }
-    .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 25px; }
-    .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
-    input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-    input:focus { border-color: #007bff; }
-    button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    button:hover { background-color: #0056b3; }
-    #result { line-height: 1.6; color: #444; }
-    .word-card { border-bottom: 1px solid #eee; padding: 15px 0; }
-    .word-card:last-child { border: none; }
-    .word-title { font-size: 22px; font-weight: bold; color: #111; margin-bottom: 5px; }
-    .pos { font-size: 13px; color: #28a745; font-weight: bold; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
-    .definition { font-size: 15px; color: #333; white-space: pre-line; }
-    .error-msg { text-align: center; color: #dc3545; font-weight: bold; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>국어 사전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#eef2f4; --card:#fff; --ink:#1b2a33; --sub:#5d6f78; --line:#cfd8dc; --accent:#0f5c63; --tint:#e3eff0; --err:#b3261e; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; display:flex; justify-content:center; }
+  main { width:100%; max-width:560px; }
+  h1 { font-family:'Noto Serif KR',serif; font-size:28px; margin:8px 0 4px; }
+  .sub { color:var(--sub); font-size:14px; margin:0 0 24px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px; }
+  .hidden { display:none; }
+  label { display:block; font-size:14px; color:var(--sub); margin:12px 0 4px; }
+  input { width:100%; padding:12px; font-size:16px; border:1px solid var(--line); border-radius:6px; font-family:inherit; }
+  input:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  button { font-family:inherit; font-size:16px; padding:12px 20px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); }
+  button:disabled { opacity:.6; cursor:wait; }
+  .row { display:flex; gap:10px; margin-top:18px; }
+  .row button { flex:1; }
+  .bar { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--sub); margin-bottom:12px; }
+  .bar button { padding:6px 12px; font-size:13px; }
+  .search { display:flex; gap:10px; }
+  .search input { flex:1; }
+  #msg { margin-top:14px; font-size:14px; min-height:20px; }
+  #msg.err { color:var(--err); }
+  #msg.ok { color:var(--accent); }
+  .entry { padding:18px 0; border-bottom:1px solid var(--line); }
+  .entry:last-child { border-bottom:0; }
+  .word { font-family:'Noto Serif KR',serif; font-weight:700; font-size:24px; }
+  .pos { margin-left:8px; font-size:13px; color:var(--accent); background:var(--tint); padding:2px 8px; border-radius:4px; vertical-align:middle; }
+  ol { margin:10px 0 0; padding-left:22px; line-height:1.7; }
+  .empty { color:var(--sub); text-align:center; padding:24px 0 6px; }
+  @media (prefers-reduced-motion: no-preference) { button { transition: background .15s; } }
+</style>
 </head>
 <body>
+<main>
+  <h1>국어 사전</h1>
+  <p class="sub">한국어기초사전에서 단어 뜻을 찾아봅니다.</p>
 
-  <div class="container">
-    <h1>📖 한국어 사전 앱</h1>
-    <div class="subtitle">국립국어원 정식 오픈소스 데이터(krdict) 이식형</div>
-    
-    <div class="search-box">
-      <input type="text" id="wordInput" placeholder="단어를 입력하세요 (예: 학교, 하늘, 바다, 가족)" onkeypress="if(event.keyCode==13) searchWord()">
-      <button onclick="searchWord()">검색</button>
+  <!-- 로그인 -->
+  <section id="auth" class="panel">
+    <label for="email">이메일</label>
+    <input id="email" type="email" autocomplete="email">
+    <label for="pw">비밀번호 (6자 이상)</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <div class="row">
+      <button id="loginBtn">로그인</button>
+      <button id="signupBtn" class="ghost">회원가입</button>
     </div>
+  </section>
 
+  <!-- 사전 -->
+  <section id="app" class="panel hidden">
+    <div class="bar"><span id="who"></span><button id="logoutBtn" class="ghost">로그아웃</button></div>
+    <div class="search">
+      <input id="q" type="text" placeholder="단어를 입력하세요" autocomplete="off">
+      <button id="searchBtn">검색</button>
+    </div>
     <div id="result"></div>
-  </div>
+  </section>
 
-  <script>
-    // 💾 알려주시는 오픈소스 저장소(spellcheck-ko/korean-dict-nikl)의 핵심 한국어기초사전(krdict) 단어 원본 데이터셋
-    // 메모리 과부하나 통신 차단막을 완전히 뚫기 위해 가장 정밀도가 높은 표준 데이터 묶음을 앱 내부에 직접 탑재했습니다.
-    const krdictDatabase = [
-      { word: "학교", pos: "명사", definition: "일정한 목적ㆍ교과 과정ㆍ설비ㆍ제도 및 법령에 따라 교사가 학생에게 지식을 가르치고 품성을 기르는 기관." },
-      { word: "하늘", pos: "명사", definition: "지구 위를 둘러싸고 있는 끝없는 공간. 푸르게 보이는 대기권 공간." },
-      { word: "바다", pos: "명사", definition: "지구 위에서 짠물이 고여 있는 아주 넓고 큰 곳." },
-      { word: "가족", pos: "명사", definition: "부부를 중심으로 한, 친족 관계에 있는 사람들의 집단. 또는 그 성원." },
-      { word: "사랑", pos: "명사", definition: "어떤 사람이나 존재를 몹시 아끼고 귀중히 여기는 마음. 또는 그런 상태." },
-      { word: "컴퓨터", pos: "명사", definition: "전자 회로를 이용하여 대량의 데이터를 고속으로 자동 처리하는 기계." },
-      { word: "행복", pos: "명사", definition: "생활에서 기쁨과 만족을 느껴 흐뭇한 상태." },
-      { word: "친구", pos: "명사", definition: "가깝게 오래 사귄 사람. 또는 나이가 비슷하여 친하게 지내는 사람." },
-      { word: "학습", pos: "명사", definition: "배우고 익혀서 지식이나 기술을 자기 것으로 만드는 과정." },
-      { word: "나무", pos: "명사", definition: "줄기나 가지가 단단하고 매년 자라는 여러해살이 식물." },
-      { word: "감사", pos: "명사", definition: "고마움을 나타내는 인사. 또는 그런 마음." },
-      { word: "공부", pos: "명사", definition: "학문이나 기술을 배우고 익힘." },
-      { word: "대한민국", pos: "명사", definition: "아시아 동부에 있는 민주 공화국. 한반도와 그 부속 도서로 이루어져 있음." }
-    ];
+  <div id="msg" role="status"></div>
+</main>
 
-    function searchWord() {
-      const keyword = document.getElementById('wordInput').value.trim();
-      const resultDiv = document.getElementById('result');
-      
-      if (!keyword) {
-        resultDiv.innerHTML = '<p class="error-msg">단어를 입력해주세요.</p>';
-        return;
-      }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://rtvvajhsnwkkrmncyfbs.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dnZhamhzbndra3JtbmN5ZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NjkwMTEsImV4cCI6MjEwNzA0NTAxMX0.O2aLLeazv_FhUhbVAkp4vz3pw8GPb_683dUu7Et1Cwk";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // 글자 일부만 포함되어도 전부 매칭해주는 정밀 필터 엔진
-      const matches = krdictDatabase.filter(item => item.word.includes(keyword));
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const say = (t, type = "") => { $("msg").textContent = t; $("msg").className = type; };
 
-      if (matches.length === 0) {
-        resultDiv.innerHTML = `
-          <p class="error-msg">'${keyword}'에 대한 검색 결과가 정식 데이터에 없습니다.</p>
-          <p style="text-align:center; font-size:13px; color:#888;">(학교, 하늘, 바다, 가족, 사랑, 컴퓨터 중 입력해 보세요!)</p>
-        `;
-        return;
-      }
+  function show(session) {
+    $("auth").classList.toggle("hidden", !!session);
+    $("app").classList.toggle("hidden", !session);
+    $("who").textContent = session ? session.user.email : "";
+    if (session) $("q").focus();
+  }
 
-      let htmlContent = '';
-      matches.forEach(item => {
-        htmlContent += `
-          <div class="word-card">
-            <div class="word-title">${item.word}</div>
-            <span class="pos">${item.pos}</span>
-            <div class="definition">${item.definition}</div>
-          </div>
-        `;
-      });
+  async function login() {
+    say("");
+    const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("pw").value });
+    if (error) say("로그인하지 못했습니다: " + error.message, "err");
+  }
 
-      resultDiv.innerHTML = htmlContent;
-    }
-  </script>
+  async function signup() {
+    say("");
+    const { data, error } = await sb.auth.signUp({ email: $("email").value.trim(), password: $("pw").value });
+    if (error) return say("가입하지 못했습니다: " + error.message, "err");
+    if (!data.session) say("확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인하세요.", "ok");
+  }
 
+  async function search() {
+    const q = $("q").value.trim();
+    if (!q) return say("단어를 입력하세요.", "err");
+    say(""); $("searchBtn").disabled = true; $("result").innerHTML = "";
+    const { data, error } = await sb.functions.invoke("krdict", { body: { q } });
+    $("searchBtn").disabled = false;
+    if (error || data?.error) return say("검색하지 못했습니다: " + (data?.error || error.message), "err");
+    if (!data.items.length) { $("result").innerHTML = `<p class="empty">'${esc(q)}' 검색 결과가 없습니다. 다른 단어로 찾아보세요.</p>`; return; }
+    $("result").innerHTML = data.items.map((it) => `
+      <div class="entry">
+        <span class="word">${esc(it.word)}</span>${it.pos ? `<span class="pos">${esc(it.pos)}</span>` : ""}
+        <ol>${it.senses.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>
+      </div>`).join("");
+  }
+
+  $("loginBtn").onclick = login;
+  $("signupBtn").onclick = signup;
+  $("logoutBtn").onclick = () => sb.auth.signOut();
+  $("searchBtn").onclick = search;
+  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") search(); });
+  $("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+
+  sb.auth.onAuthStateChange((_e, session) => show(session));
+  sb.auth.getSession().then(({ data }) => show(data.session));
+</script>
 </body>
 </html>
