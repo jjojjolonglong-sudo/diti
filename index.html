@@ -69,7 +69,7 @@ dialog::backdrop{background:#0006}
   <main class="sheet">
     <section id="ps">
       <div class="stick"><input id="q" type="text" placeholder="단어를 입력하세요" autocomplete="off"><button class="btn pri" id="sb">검색</button></div>
-      <div id="res"><p class="empty">단어를 검색하고, 담고 싶은 뜻을 골라 단어장에 담으세요.</p></div>
+      <pre id="dbg" hidden style="white-space:pre-wrap;word-break:break-all;font-size:11px;background:#f4f4f4;padding:6px;margin:6px 0"></pre><div id="res"><p class="empty">단어를 검색하고, 담고 싶은 뜻을 골라 단어장에 담으세요.</p></div>
     </section>
     <section id="pw2" hidden>
       <div class="stick"><input id="wq" type="text" placeholder="단어장에서 찾기 (단어·뜻)" autocomplete="off"></div>
@@ -128,9 +128,10 @@ async function search(){
   const q=$('#q').value.trim();if(!q)return toast('단어를 입력하세요');
   $('#sb').disabled=true;$('#res').innerHTML='<p class="empty">찾는 중…</p>';
   try{
-    const r=await fetch(`${SB}/functions/v1/krdict`,{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({q})});
+    const r=await fetch(`${SB}/functions/v1/krdict`,{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({q,debug:/[?&]debug/.test(location.search)})});
     const d=await r.json().catch(()=>({}));if(!r.ok||d.error)throw new Error((d.error||d.message||'HTTP '+r.status));
     R=d.items||[];
+    $('#dbg').hidden=!d.debug;if(d.debug)$('#dbg').textContent=JSON.stringify(d.debug,null,1);
     $('#res').innerHTML=R.length?R.map((it,i)=>`<div class="ent" data-i="${i}"><div class="eh"><b class="w">${E(it.word)}${it.sup?`<sup>${E(it.sup)}</sup>`:''}</b>${it.pos?`<span class="pos">${E(it.pos)}</span>`:''}<span class="have"${has(it.word)?'':' hidden'}>✔ 단어장에 있음</span>${it.full===false?'<span class="pos" title="상세 조회에 실패해서 검색 결과의 뜻만 보여요">뜻 일부</span>':''}</div>
       <div>${it.senses.map((s,j)=>`<label class="sl"><input type="checkbox" data-s="${j}"><span>${j+1}. ${E(s)}</span></label>`).join('')}</div>
       <div class="eb"><button class="btn sm pri" data-save="${i}">선택한 뜻 담기</button><button class="btn sm" data-all="${i}">전체 선택</button></div></div>`).join(''):`<p class="empty">'${E(q)}' 검색 결과가 없어요. 다른 단어로 찾아보세요.</p>`;
