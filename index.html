@@ -47,6 +47,11 @@ label.f{display:block;font-weight:700;font-size:12px;margin-top:8px}label.f>*{ma
 /* 단어장 */
 .row{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:baseline;padding:5px 2px;border-bottom:1px dashed #cfdbe3;cursor:pointer}
 .row:hover{background:#F4F8FA}
+.addbox{border:1.5px dashed #9fb4c1;padding:6px 8px;margin:6px 0}.addbox summary{cursor:pointer;font-weight:700;font-size:13px}
+.xr{display:flex;gap:6px;margin:5px 0}.xr>*{min-width:0;flex:1}
+.addbox input,.addbox select,.addbox textarea,.xi input,.xi select,.xi textarea{font:inherit;font-size:13px;border:1px solid #b9c9d3;padding:3px 5px;background:#fff;width:100%;box-sizing:border-box}
+.xi{padding:6px 2px;border-bottom:1px dashed #cfdbe3}.xi .xh{display:flex;gap:6px;align-items:center;margin-bottom:4px}.xi .xh b{flex:none}.xi .xh select{flex:1}
+.xi .xr{margin:4px 0}.xi.dirty{background:#fffbe8}.xi .ok{font-size:11px;color:#0f7a4c}
 .it.open>.row{background:#F4F8FA}.it.open>.row .m{display:none}
 .dt{padding:4px 4px 8px 12px;border-bottom:1px dashed #cfdbe3;font-size:13px}
 .dt ol{margin:2px 0 4px;padding-left:20px}.dt li{padding:1px 0}
@@ -71,7 +76,7 @@ dialog::backdrop{background:#0006}
 </div>
 <div id="app" hidden>
   <header class="top"><h1 class="logo">diti</h1><span class="sub">국어 사전 · 표준국어대사전</span><button class="btn sm" id="out">로그아웃</button></header>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="s" aria-selected="true">검색</button><button class="tab" role="tab" data-t="w" aria-selected="false" id="tw">단어장</button></div>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="s" aria-selected="true">검색</button><button class="tab" role="tab" data-t="w" aria-selected="false" id="tw">단어장</button><button class="tab" role="tab" data-t="x" aria-selected="false">용례 입력</button></div>
   <main class="sheet">
     <section id="ps">
       <div class="stick"><input id="q" type="text" placeholder="단어를 입력하세요" autocomplete="off"><button class="btn pri" id="sb">검색</button></div>
@@ -80,6 +85,18 @@ dialog::backdrop{background:#0006}
     <section id="pw2" hidden>
       <div class="stick"><input id="wq" type="text" placeholder="단어장에서 찾기 (단어·뜻)" autocomplete="off"></div>
       <div id="wl"></div>
+    </section>
+    <section id="px" hidden>
+      <p class="hint">임시 입력 화면이에요. 행마다 책·쪽수·용례를 넣고 그 줄의 '저장'을 누르세요.</p>
+      <details class="addbox" open><summary>＋ 새 용례 행 추가</summary>
+        <div class="xr"><input id="n-w" list="wdl" placeholder="단어 (단어장에 있는 것)" autocomplete="off"><datalist id="wdl"></datalist>
+        <select id="n-b"></select></div>
+        <div class="xr"><input id="n-d" type="date"><input id="n-p" type="number" inputmode="numeric" placeholder="쪽수"><input id="n-c" type="text" placeholder="퍼센트 (예: 82)"></div>
+        <textarea id="n-e" rows="2" placeholder="용례 문장"></textarea>
+        <div class="btns"><button class="btn pri sm" id="n-add">추가</button></div>
+      </details>
+      <div class="stick"><label class="sl" style="margin:0"><input type="checkbox" id="x-empty" checked><span>용례가 빈 행만 <b id="x-n"></b></span></label><input id="x-q" type="text" placeholder="단어 찾기" autocomplete="off"></div>
+      <div id="xl"></div>
     </section>
   </main>
 </div>
@@ -99,7 +116,7 @@ const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(
 const guard=f=>async(...a)=>{try{return await f(...a)}catch(e){toast(e.message)}};
 const wkey=x=>String(x||'').trim().toLowerCase(),lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
 /* 뜻 저장 형식: 한 줄 "1. 뜻 / 2. 뜻" (bkbk 한 줄 입력칸에서도 안 깨짐). 읽을 때는 줄바꿈도 같이 인식 */
-const senseList=m=>{const o=[];lines(m).forEach(l=>l.split(/\s*\/\s*(?=\d+\.\s)/).forEach(p=>{p=p.replace(/^\d+\.\s*/,'').trim();if(p)o.push(p)}));return o};
+const senseList=m=>{const o=[];lines(m).forEach(l=>l.split(/\s*\/?\s+(?=\d+\.\s)/).forEach(p=>{p=p.replace(/^\d+\.\s*/,'').trim();if(p)o.push(p)}));return o};
 const fmtSenses=a=>a.length>1?a.map((x,i)=>`${i+1}. ${x}`).join(' / '):(a[0]||'');
 const nrm=x=>String(x||'').replace(/[\s.。,]/g,'').toLowerCase(),wk2=x=>wkey(x).replace(/[\s\-^·0-9]/g,'');
 const sameSense=(a,b)=>{a=nrm(a);b=nrm(b);return !!a&&!!b&&(a===b||(Math.min(a.length,b.length)>=6&&(a.includes(b)||b.includes(a))))};
@@ -118,19 +135,20 @@ async function api(method,path,body){
 async function getAll(path){const out=[];for(let o=0;;o+=1000){const p=await api('GET',`${path}${path.includes('?')?'&':'?'}limit=1000&offset=${o}`);out.push(...p);if(p.length<1000)break}return out}
 
 /* ---------- 상태 ---------- */
-let W=[],U=new Map(),UL=new Map(),BN=new Map(),R=[];   // 단어장, 단어별 bkbk 사용 횟수, 검색 결과
+let W=[],U=new Map(),UL=new Map(),BN=new Map(),UA=[],R=[];   // 단어장, 단어별 bkbk 사용 횟수, 검색 결과
 const sortW=()=>W.sort((a,b)=>String(a.word).localeCompare(String(b.word),'ko'));
 async function loadAll(){
-  const [w,u,b]=await Promise.all([getAll('/rest/v1/diti_words?select=*&order=id'),getAll('/rest/v1/bkbk_word_use?select=word_id,book,page,pct,meaning&order=id').catch(()=>[]),getAll('/rest/v1/bkbk_books?select=id,name&order=id').catch(()=>[])]);
-  W=w;sortW();U=new Map();UL=new Map();BN=new Map(b.map(x=>[String(x.id),x.name]));u.forEach(x=>{const k=String(x.word_id);U.set(k,(U.get(k)||0)+1);(UL.get(k)||UL.set(k,[]).get(k)).push(x)});renderW();$('#tw').textContent=`단어장 ${W.length}`;
+  const [w,u,b,sr]=await Promise.all([getAll('/rest/v1/diti_words?select=*&order=id'),getAll('/rest/v1/bkbk_word_use?select=id,word_id,book,date,page,pct,example&order=date,page').catch(()=>[]),getAll('/rest/v1/bkbk_books?select=id,series,label&order=id').catch(()=>[]),getAll('/rest/v1/bkbk_series?select=id,name&order=id').catch(()=>[])]);
+  W=w;sortW();U=new Map();UL=new Map();const SN=new Map(sr.map(x=>[String(x.id),x.name]));BN=new Map(b.map(x=>{const n=SN.get(String(x.series))||x.series||'',l=String(x.label||'').trim();return [String(x.id),l?`${n} [${l}]`:String(n)]}));UA=u;reindex();renderW();$('#tw').textContent=`단어장 ${W.length}`;
 }
+function reindex(){U=new Map();UL=new Map();UA.forEach(x=>{const k=String(x.word_id);U.set(k,(U.get(k)||0)+1);(UL.get(k)||UL.set(k,[]).get(k)).push(x)})}
 const cnt=()=>$('#tw').textContent=`단어장 ${W.length}`;
 
 /* ---------- 탭 ---------- */
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===b));
-  $('#ps').hidden=b.dataset.t!=='s';$('#pw2').hidden=b.dataset.t!=='w';
-  (b.dataset.t==='s'?$('#q'):$('#wq')).focus();
+  $('#ps').hidden=b.dataset.t!=='s';$('#pw2').hidden=b.dataset.t!=='w';$('#px').hidden=b.dataset.t!=='x';
+  if(b.dataset.t==='x')renderX();else (b.dataset.t==='s'?$('#q'):$('#wq')).focus();
 });
 
 /* ---------- 검색 ---------- */
@@ -172,7 +190,7 @@ $('#wq').oninput=renderW;
 const OPEN=new Set();
 function detail(w,n){
   const ss=senseList(w.meaning),us=(UL.get(String(w.id))||[]).slice().sort((a,b)=>String(BN.get(String(a.book))||'').localeCompare(String(BN.get(String(b.book))||''),'ko')||(+a.page||0)-(+b.page||0));
-  const ex=us.map(u=>{const bk=BN.get(String(u.book))||'책',loc=u.page!=null&&u.page!==''?'p.'+u.page:(u.pct!=null&&u.pct!==''?String(u.pct).replace(/%?$/,'%'):'');const t=String(u.meaning||'').trim();return `<div class="ex">${t?E(t):'<i>(용례 없음)</i>'} <span>(${E(bk)}${loc?'/'+E(loc):''})</span></div>`}).join('');
+  const ex=us.map(u=>{const bk=BN.get(String(u.book))||'책',loc=u.page!=null&&u.page!==''?'p.'+u.page:(u.pct!=null&&u.pct!==''?Math.round(+u.pct*100)+'%':'');const t=String(u.example||'').trim();return `<div class="ex">${t?E(t):'<i>(용례 없음)</i>'} <span>(${E(bk)}${loc?'/'+E(loc):''})</span></div>`}).join('');
   return `<div class="dt">${ss.length?`<ol>${ss.map(x=>`<li>${E(x)}</li>`).join('')}</ol>`:'<p class="empty">뜻이 없어요</p>'}${w.note?`<div class="nt">${E(w.note)}</div>`:''}${ex?`<h4>용례</h4>${ex}`:''}<div class="btns"><button class="btn sm" data-edit="${w.id}">수정</button></div></div>`;
 }
 let EID=null;
@@ -193,6 +211,42 @@ $('#e-del').onclick=guard(async()=>{
   const w=W.find(x=>x.id===EID);if((U.get(String(EID))||0)>0)return toast('bkbk에서 쓰인 단어는 삭제할 수 없어요');
   if(!confirm(`'${w.word}'을(를) 단어장에서 삭제할까요?`))return;
   await api('DELETE',`/rest/v1/diti_words?id=eq.${EID}`);W=W.filter(x=>x.id!==EID);cnt();renderW();$('#ed').close();toast('삭제했어요');
+});
+
+/* ---------- 용례 입력 (임시) ---------- */
+const BO=()=>[...BN].sort((a,b)=>a[1].localeCompare(b[1],'ko')),bopts=sel=>`<option value="">책 선택</option>`+BO().map(([id,n])=>`<option value="${E(id)}"${String(sel)===id?' selected':''}>${E(n)}</option>`).join('');
+const WM2=()=>new Map(W.map(w=>[String(w.id),w.word]));
+const pctIn=v=>{v=String(v||'').replace('%','').trim();if(v==='')return null;const n=parseFloat(v);return isNaN(n)?null:Math.round(n*100)/10000};
+const pctOut=v=>v==null||v===''?'':(Math.round(+v*10000)/100);
+const today=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+function renderX(){
+  $('#wdl').innerHTML=W.map(w=>`<option value="${E(w.word)}">`).join('');
+  if(!$('#n-b').options.length){$('#n-b').innerHTML=bopts('');$('#n-d').value=today()}
+  const wm=WM2(),q=wkey($('#x-q').value),only=$('#x-empty').checked;
+  let L=UA.filter(u=>(!only||!String(u.example||'').trim())&&(!q||wkey(wm.get(String(u.word_id))).includes(q)));
+  $('#x-n').textContent=`(${L.length}/${UA.length})`;
+  $('#xl').innerHTML=L.slice(0,150).map(u=>`<div class="xi" data-id="${u.id}"><div class="xh"><b>${E(wm.get(String(u.word_id))||'?')}</b><select data-f="book">${bopts(u.book)}</select></div>
+    <div class="xr"><input data-f="page" type="number" inputmode="numeric" placeholder="쪽수" value="${E(u.page??'')}"><input data-f="pct" type="text" placeholder="퍼센트" value="${E(pctOut(u.pct))}"><input data-f="date" type="date" value="${E(u.date||'')}"></div>
+    <textarea data-f="example" rows="2" placeholder="용례 문장">${E(u.example||'')}</textarea>
+    <div class="btns" style="margin-top:4px"><button class="btn sm pri" data-xs>저장</button><span class="ok"></span></div></div>`).join('')+(L.length>150?`<p class="empty">${L.length-150}개 더 있어요. 저장하면 이 목록에서 줄어듭니다.</p>`:'')||'<p class="empty">표시할 행이 없어요</p>';
+}
+$('#x-empty').onchange=renderX;$('#x-q').oninput=renderX;
+$('#xl').addEventListener('input',e=>{const r=e.target.closest('.xi');if(r)r.classList.add('dirty')});
+$('#xl').addEventListener('change',e=>{const r=e.target.closest('.xi');if(r)r.classList.add('dirty')});
+$('#xl').onclick=guard(async e=>{const b=e.target.closest('[data-xs]');if(!b)return;const r=b.closest('.xi'),u=UA.find(x=>String(x.id)===r.dataset.id),g=f=>r.querySelector(`[data-f="${f}"]`).value;
+  const body={book:g('book')||null,page:g('page')===''?null:parseInt(g('page'),10),pct:pctIn(g('pct')),date:g('date')||null,example:g('example').trim()||null};
+  if(!body.book)return toast('책을 선택하세요');
+  const res=await api('PATCH',`/rest/v1/bkbk_word_use?id=eq.${u.id}`,body);Object.assign(u,res[0]);
+  r.classList.remove('dirty');r.querySelector('.ok').textContent='✔ 저장됨';renderW();toast('저장했어요');
+  if($('#x-empty').checked&&u.example)setTimeout(renderX,600);
+});
+$('#n-add').onclick=guard(async()=>{
+  const w=has($('#n-w').value);if(!w)return toast('단어장에 있는 단어를 입력하세요');
+  const book=$('#n-b').value;if(!book)return toast('책을 선택하세요');
+  const body={id:crypto.randomUUID(),word_id:w.id,book,date:$('#n-d').value||today(),page:$('#n-p').value===''?null:parseInt($('#n-p').value,10),pct:pctIn($('#n-c').value),example:$('#n-e').value.trim()||null};
+  if(body.page==null&&body.pct==null)return toast('쪽수나 퍼센트 중 하나는 넣어 주세요');
+  const r=await api('POST','/rest/v1/bkbk_word_use',body);UA.push(r[0]);reindex();
+  $('#n-w').value='';$('#n-p').value='';$('#n-c').value='';$('#n-e').value='';renderW();renderX();toast(`'${w.word}' 용례를 추가했어요`);$('#n-w').focus();
 });
 
 /* ---------- 시작 ---------- */
