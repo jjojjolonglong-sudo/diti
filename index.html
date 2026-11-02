@@ -131,7 +131,7 @@ async function search(){
     const r=await fetch(`${SB}/functions/v1/krdict`,{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({q})});
     const d=await r.json().catch(()=>({}));if(!r.ok||d.error)throw new Error((d.error||d.message||'HTTP '+r.status));
     R=d.items||[];
-    $('#res').innerHTML=R.length?R.map((it,i)=>`<div class="ent" data-i="${i}"><div class="eh"><b class="w">${E(it.word)}</b>${it.pos?`<span class="pos">${E(it.pos)}</span>`:''}<span class="have"${has(it.word)?'':' hidden'}>✔ 단어장에 있음</span></div>
+    $('#res').innerHTML=R.length?R.map((it,i)=>`<div class="ent" data-i="${i}"><div class="eh"><b class="w">${E(it.word)}${it.sup?`<sup>${E(it.sup)}</sup>`:''}</b>${it.pos?`<span class="pos">${E(it.pos)}</span>`:''}<span class="have"${has(it.word)?'':' hidden'}>✔ 단어장에 있음</span>${it.full===false?'<span class="pos" title="상세 조회에 실패해서 검색 결과의 뜻만 보여요">뜻 일부</span>':''}</div>
       <div>${it.senses.map((s,j)=>`<label class="sl"><input type="checkbox" data-s="${j}"><span>${j+1}. ${E(s)}</span></label>`).join('')}</div>
       <div class="eb"><button class="btn sm pri" data-save="${i}">선택한 뜻 담기</button><button class="btn sm" data-all="${i}">전체 선택</button></div></div>`).join(''):`<p class="empty">'${E(q)}' 검색 결과가 없어요. 다른 단어로 찾아보세요.</p>`;
   }catch(e){$('#res').innerHTML=`<p class="empty">검색하지 못했어요: ${E(e.message)}</p>`}
