@@ -187,7 +187,7 @@ function renderW(){
   const q=wkey($('#wq').value),L=W.filter(w=>!q||wkey(w.word).includes(q)||wkey(w.meaning).includes(q));
   $('#wl').innerHTML=L.map(w=>{const n=U.get(String(w.id))||0;const o=OPEN.has(String(w.id));return `<div class="it${o?' open':''}" data-id="${w.id}"><div class="row"><b>${E(w.word)}</b><span class="u">${n?'×'+n:''}</span><span class="m">${E(fmtSenses(senseList(w.meaning)))}</span></div>${o?detail(w,n):''}</div>`}).join('')||`<p class="empty">${W.length?'찾는 단어가 없어요':'아직 담은 단어가 없어요. 검색 탭에서 담아 보세요.'}</p>`;
 }
-$('#wq').oninput=renderW;
+let _wt=null;$('#wq').oninput=()=>{clearTimeout(_wt);_wt=setTimeout(renderW,150)};
 const OPEN=new Set();
 function detail(w,n){
   const ss=senseList(w.meaning),us=(UL.get(String(w.id))||[]).slice().sort((a,b)=>String(BN.get(String(a.book))||'').localeCompare(String(BN.get(String(b.book))||''),'ko')||(+a.page||0)-(+b.page||0));
@@ -215,7 +215,7 @@ $('#e-del').onclick=guard(async()=>{
 });
 
 /* ---------- 용례 입력 (임시) ---------- */
-const BO=()=>[...BN].sort((a,b)=>a[1].localeCompare(b[1],'ko')),bopts=sel=>`<option value="">책 선택</option>`+BO().map(([id,n])=>`<option value="${E(id)}"${String(sel)===id?' selected':''}>${E(n)}</option>`).join('');
+let _bn=null,_bo=null;const BO=()=>{if(_bn!==BN){_bn=BN;_bo=[...BN].sort((a,b)=>a[1].localeCompare(b[1],'ko'))}return _bo},bsel=sel=>`<option value="">책 선택</option>`+(sel?`<option value="${E(sel)}" selected>${E(BN.get(String(sel))||'책')}</option>`:''),bopts=sel=>`<option value="">책 선택</option>`+BO().map(([id,n])=>`<option value="${E(id)}"${String(sel)===id?' selected':''}>${E(n)}</option>`).join('');
 const WM2=()=>new Map(W.map(w=>[String(w.id),w.word]));
 const pctIn=v=>{v=String(v||'').replace('%','').trim();if(v==='')return null;const n=parseFloat(v);return isNaN(n)?null:Math.round(n*100)/10000};
 const pctOut=v=>v==null||v===''?'':(Math.round(+v*10000)/100);
@@ -226,12 +226,14 @@ function renderX(){
   const wm=WM2(),q=wkey($('#x-q').value),only=$('#x-empty').checked;
   let L=UA.filter(u=>(!only||!String(u.example||'').trim())&&(!q||wkey(wm.get(String(u.word_id))).includes(q)));
   $('#x-n').textContent=`(${L.length}/${UA.length})`;
-  $('#xl').innerHTML=L.slice(0,150).map(u=>`<div class="xi" data-id="${u.id}"><div class="xh"><b>${E(wm.get(String(u.word_id))||'?')}</b><select data-f="book">${bopts(u.book)}</select></div>
+  $('#xl').innerHTML=L.slice(0,150).map(u=>`<div class="xi" data-id="${u.id}"><div class="xh"><b>${E(wm.get(String(u.word_id))||'?')}</b><select data-f="book" data-lazy>${bsel(u.book)}</select></div>
     <div class="xr"><input data-f="page" type="number" inputmode="numeric" placeholder="쪽수" value="${E(u.page??'')}"><input data-f="pct" type="text" placeholder="퍼센트" value="${E(pctOut(u.pct))}"><input data-f="date" type="date" value="${E(u.date||'')}"></div>
     <textarea data-f="example" rows="2" placeholder="용례 문장">${E(u.example||'')}</textarea>
     <div class="btns" style="margin-top:4px"><button class="btn sm pri" data-xs>저장</button><span class="ok"></span></div></div>`).join('')+(L.length>150?`<p class="empty">${L.length-150}개 더 있어요. 저장하면 이 목록에서 줄어듭니다.</p>`:'')||'<p class="empty">표시할 행이 없어요</p>';
 }
-$('#x-empty').onchange=renderX;$('#x-q').oninput=renderX;
+$('#x-empty').onchange=renderX;let _xt=null;$('#x-q').oninput=()=>{clearTimeout(_xt);_xt=setTimeout(renderX,200)};
+const fillBook=e=>{const s=e.target.closest&&e.target.closest('select[data-lazy]');if(!s)return;const v=s.value;s.innerHTML=bopts(v);s.value=v;s.removeAttribute('data-lazy')};
+$('#xl').addEventListener('pointerdown',fillBook,true);$('#xl').addEventListener('focusin',fillBook);
 $('#xl').addEventListener('input',e=>{const r=e.target.closest('.xi');if(r)r.classList.add('dirty')});
 $('#xl').addEventListener('change',e=>{const r=e.target.closest('.xi');if(r)r.classList.add('dirty')});
 $('#xl').onclick=guard(async e=>{const b=e.target.closest('[data-xs]');if(!b)return;const r=b.closest('.xi'),u=UA.find(x=>String(x.id)===r.dataset.id),g=f=>r.querySelector(`[data-f="${f}"]`).value;
