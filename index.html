@@ -4,29 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>diti 국어 사전</title>
+<script src="https://jjojjolonglong-sudo.github.io/mnmn/fonts.v1.js" data-app="diti"></script>
 <script src="https://jjojjolonglong-sudo.github.io/mnmn/config.js"></script>
 <style>
-/* 콘셉트: wkwk와 같은 오피스풍 교정쇄. 격자 위의 종이, 한쪽 귀퉁이를 자른 네모 */
-:root{--ink:#333B4F;--paper:#fff;--bg:#EBF1F6;--grid:#D6E4ED;--ye:#FFE600;--cy:#14B4DA;--mg:#E6338A;--mute:#5b6672;--tint:#E3EFF0}
+/* 콘셉트: 종이 사전. 따뜻한 크림 바탕, 남색 잉크, 버건디 포인트 하나. 모서리는 각지게 */
+:root{--ink:#1F2A44;--paper:#FFFDF8;--bg:#F1E9D6;--acc:#8C2438;--accd:#701B2C;--cy:#8C2438;--dng:#B4452F;--mute:#6B6354;--tint:#EFE4CA;--line:#CDBF9A;--sel:#F7F0DE}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{min-width:300px;color:var(--ink);background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:14px;line-height:1.4;-webkit-text-size-adjust:100%}
-.btn,.sheet,dialog,.tab,#login,.logo{--c:9px;--bgc:#fff;--lc:var(--ink);border-color:transparent!important;clip-path:polygon(0 0,calc(100% - var(--c)) 0,100% var(--c),100% 100%,0 100%);background:linear-gradient(225deg,transparent calc(var(--c)*.7071 - .62px),var(--bgc) 0) padding-box,linear-gradient(var(--lc),var(--lc)) border-box}
+body{min-width:300px;color:var(--ink);background-color:var(--bg);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:14px;line-height:1.4;-webkit-text-size-adjust:100%}
+.btn,.sheet,dialog,.tab,#login,.logo{--bgc:var(--paper);background:var(--bgc);border-radius:0}
 #app{max-width:680px;margin:0 auto;padding:10px 10px 6px;height:100vh;height:min(100dvh,900px);display:flex;flex-direction:column}
 .top{flex:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.logo{--c:7px;--bgc:var(--ye);margin:0;font-family:'Courier New',monospace;font-size:20px;font-weight:800;border:1.5px solid var(--ink);padding:0 9px}
+.logo{--bgc:var(--acc);color:#fff;margin:0;font-family:'Noto Serif KR','Nanum Myeongjo','Batang',serif;font-size:20px;font-weight:800;letter-spacing:.02em;border:1.5px solid var(--acc);padding:0 10px}
 .sub{font-weight:700;font-size:13px;flex:1}
 .tabs{flex:none;display:flex;gap:4px;padding-left:8px;margin-bottom:-1.5px;position:relative;z-index:2}
-.tab{--c:8px;--bgc:#CFE0EA;font:inherit;font-weight:700;padding:5px 12px 4px;margin-top:7px;border:1.5px solid var(--ink);border-bottom:0;color:var(--ink);cursor:pointer}
-.tab[aria-selected=true]{--bgc:var(--ye);margin-top:0;padding-top:10px}
-.sheet{--c:16px;position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;border:1.5px solid var(--ink);padding:0 10px 12px}
+.tab{--bgc:#E7DCC1;font:inherit;font-weight:700;padding:5px 12px 4px;margin-top:7px;border:1.5px solid var(--ink);border-bottom:0;color:var(--ink);cursor:pointer}
+.tab[aria-selected=true]{--bgc:var(--paper);margin-top:0;padding-top:10px;border-top:3px solid var(--acc)}
+.sheet{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;border:1.5px solid var(--ink);padding:0 10px 12px}
 .stick{position:sticky;top:0;z-index:3;background:var(--paper);padding:10px 10px 6px;margin:0 -10px;display:flex;gap:6px}
 button{font:inherit;color:inherit}
-.btn{--c:7px;font-weight:700;border:1.5px solid var(--ink);padding:5px 11px;cursor:pointer;white-space:nowrap}
+.btn{font-weight:700;border:1.5px solid var(--ink);padding:5px 11px;cursor:pointer;white-space:nowrap}
 .btn.sm{padding:2px 8px;font-size:12px}
-.btn.pri{--bgc:var(--ye)}.btn.dng{--bgc:var(--mg);color:#fff}
-.btn:hover:not(:disabled){--bgc:#F1F5F8}.btn.pri:hover:not(:disabled){--bgc:#F2D800}.btn.dng:hover:not(:disabled){--bgc:#D12A7A}
+.btn.pri{--bgc:var(--acc);color:#fff}.btn.dng{--bgc:var(--dng);color:#fff}
+.btn:hover:not(:disabled){--bgc:var(--sel)}.btn.pri:hover:not(:disabled){--bgc:var(--accd)}.btn.dng:hover:not(:disabled){--bgc:#963A27}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn:focus-visible,.tab:focus-visible{outline:3px solid var(--cy);outline-offset:-5px}
 input[type=text],input[type=email],input[type=password],textarea{display:block;width:100%;font:inherit;border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 8px;border-radius:0}
@@ -36,34 +37,34 @@ label.f{display:block;font-weight:700;font-size:12px;margin-top:8px}label.f>*{ma
 .hint{font-size:12px;color:var(--mute);margin:4px 0 0}
 .empty{text-align:center;color:var(--mute);padding:22px 8px}
 /* 검색 결과 */
-.ent{padding:8px 0 7px;border-bottom:1px dashed #9fb0bd}.ent:last-child{border-bottom:0}
+.ent{padding:8px 0 7px;border-bottom:1px dashed var(--line)}.ent:last-child{border-bottom:0}
 .eh{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
-.w{font-weight:900;font-size:17px}
+.w{font-weight:900;font-size:17px;font-family:'Noto Serif KR','Nanum Myeongjo','Batang',serif}
 .pos{font-size:11px;font-weight:700;background:var(--tint);padding:0 6px}
 .have{font-size:11px;font-weight:700;color:#0f7a4c}
 .sl{display:flex;gap:6px;align-items:flex-start;padding:2px 0;cursor:pointer}
 .sl input{margin:3px 0 0;flex:none}
 .eb{display:flex;gap:6px;margin-top:4px}
 /* 단어장 */
-.row{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:baseline;padding:5px 2px;border-bottom:1px dashed #cfdbe3;cursor:pointer}
-.row:hover{background:#F4F8FA}
-.addbox{border:1.5px dashed #9fb4c1;padding:6px 8px;margin:6px 0}.addbox summary{cursor:pointer;font-weight:700;font-size:13px}
+.row{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:baseline;padding:5px 2px;border-bottom:1px dashed var(--line);cursor:pointer}
+.row:hover{background:var(--sel)}
+.addbox{border:1.5px dashed var(--line);padding:6px 8px;margin:6px 0}.addbox summary{cursor:pointer;font-weight:700;font-size:13px}
 .xr{display:flex;gap:6px;margin:5px 0}.xr>*{min-width:0;flex:1}
-.addbox input,.addbox select,.addbox textarea,.xi input,.xi select,.xi textarea{font:inherit;font-size:13px;border:1px solid #b9c9d3;padding:3px 5px;background:#fff;width:100%;box-sizing:border-box}
-.xi{padding:6px 2px;border-bottom:1px dashed #cfdbe3}.xi .xh{display:flex;gap:6px;align-items:center;margin-bottom:4px}.xi .xh b{flex:none}.xi .xh select{flex:1}
-.xi .xr{margin:4px 0}.xi.dirty{background:#fffbe8}.xi .ok{font-size:11px;color:#0f7a4c}
-.it.open>.row{background:#F4F8FA}.it.open>.row .m{display:none}
-.dt{padding:4px 4px 8px 12px;border-bottom:1px dashed #cfdbe3;font-size:13px}
+.addbox input,.addbox select,.addbox textarea,.xi input,.xi select,.xi textarea{font:inherit;font-size:13px;border:1px solid var(--line);padding:3px 5px;background:#fff;width:100%;box-sizing:border-box}
+.xi{padding:6px 2px;border-bottom:1px dashed var(--line)}.xi .xh{display:flex;gap:6px;align-items:center;margin-bottom:4px}.xi .xh b{flex:none}.xi .xh select{flex:1}
+.xi .xr{margin:4px 0}.xi.dirty{background:#FFF3D6}.xi .ok{font-size:11px;color:#0f7a4c}
+.it.open>.row{background:var(--sel)}.it.open>.row .m{display:none}
+.dt{padding:4px 4px 8px 12px;border-bottom:1px dashed var(--line);font-size:13px}
 .dt ol{margin:2px 0 4px;padding-left:20px}.dt li{padding:1px 0}
 .dt .nt{color:var(--mute);margin:2px 0}.dt h4{margin:6px 0 2px;font-size:11px;color:var(--mute)}
 .ex{padding:2px 0 2px 8px;border-left:2px solid var(--tint)}.ex span{color:var(--mute);font-size:12px}
 .sl.done{opacity:.55;cursor:default}.sl em{font-style:normal;font-size:11px;font-weight:700;color:#0f7a4c}
 .row .m{color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .u{font-size:11px;font-weight:700;color:var(--mute)}
-dialog{--c:14px;border:1.5px solid var(--ink);padding:12px;width:min(440px,94vw);color:var(--ink)}
+dialog{border:1.5px solid var(--ink);padding:12px;width:min(440px,94vw);color:var(--ink)}
 dialog::backdrop{background:#0006}
 .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-#login{--c:14px;max-width:300px;margin:14vh auto;padding:14px;border:1.5px solid var(--ink)}
+#login{max-width:300px;margin:14vh auto;padding:14px;border:1.5px solid var(--ink)}
 #toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:7px 14px;z-index:99;max-width:90vw;font-size:13px}
 </style>
 </head>
