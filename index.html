@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>diti 국어 사전</title>
 <script src="https://jjojjolonglong-sudo.github.io/mnmn/fonts.v1.js" data-app="diti"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#F1E9D6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="diti">
 <script src="https://jjojjolonglong-sudo.github.io/mnmn/config.js"></script>
 <style>
 /* 콘셉트: 종이 사전. 따뜻한 크림 바탕, 남색 잉크, 버건디 포인트 하나. 모서리는 각지게 */
@@ -258,6 +259,7 @@ $('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
 $('#out').onclick=()=>{saveSes(null);show()};
 function show(){$('#login').hidden=!!SES;$('#app').hidden=!SES;if(SES){guard(loadAll)();$('#q').focus()}}
 show();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
