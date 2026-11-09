@@ -12,13 +12,13 @@
 :root{--ink:#1F2A44;--paper:#FFFDF8;--bg:#F1E9D6;--acc:#8C2438;--accd:#701B2C;--cy:#8C2438;--dng:#B4452F;--mute:#6B6354;--tint:#EFE4CA;--line:#CDBF9A;--sel:#F7F0DE}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;overscroll-behavior:none}
 body{min-width:300px;color:var(--ink);background-color:var(--bg);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:14px;line-height:1.4;-webkit-text-size-adjust:100%}
 .btn,.sheet,dialog,.tab,#login,.logo{--bgc:var(--paper);background:var(--bgc);border-radius:0}
 #app{max-width:680px;margin:0 auto;padding:10px 10px 6px;height:100vh;height:min(100dvh,900px);display:flex;flex-direction:column}
 .top{flex:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .logo{--bgc:var(--acc);color:#fff;margin:0;font-family:'Noto Serif KR','Nanum Myeongjo','Batang',serif;font-size:20px;font-weight:800;letter-spacing:.02em;border:1.5px solid var(--acc);padding:0 10px}
-.sub{font-weight:700;font-size:13px;flex:1}
+.sub{font-weight:700;font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tabs{flex:none;display:flex;gap:4px;padding-left:8px;margin-bottom:-1.5px;position:relative;z-index:2}
 .tab{--bgc:#E7DCC1;font:inherit;font-weight:700;padding:5px 12px 4px;margin-top:7px;border:1.5px solid var(--ink);border-bottom:0;color:var(--ink);cursor:pointer}
 .tab[aria-selected=true]{--bgc:var(--paper);margin-top:0;padding-top:10px;border-top:3px solid var(--acc)}
@@ -62,6 +62,15 @@ label.f{display:block;font-weight:700;font-size:12px;margin-top:8px}label.f>*{ma
 .sl.done{opacity:.55;cursor:default}.sl em{font-style:normal;font-size:11px;font-weight:700;color:#0f7a4c}
 .row .m{color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .u{font-size:11px;font-weight:700;color:var(--mute)}
+.btn.ic{width:26px;padding:2px 0;text-align:center}
+/* 태그 */
+div.f{font-weight:700;font-size:12px;margin-top:8px}div.f .tg{margin-top:4px;font-weight:700}
+.tg{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);padding:1px 8px;cursor:pointer;border-radius:0}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}.chip small{font-weight:400;opacity:.75;margin-left:3px}
+.tgs{flex-wrap:wrap;gap:4px;border-bottom:1px dashed var(--line)}
+.row .tl{grid-column:1/-1;font-size:11px;color:var(--acc);font-weight:700;margin-top:-3px}
+.dt .tgv{margin:4px 0}.dt .tgv span{font-size:11px;font-weight:700;color:var(--acc);border:1px solid var(--acc);padding:0 6px;margin-right:4px}
 dialog{border:1.5px solid var(--ink);padding:12px;width:min(440px,94vw);color:var(--ink)}
 dialog::backdrop{background:#0006}
 .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
@@ -77,8 +86,8 @@ dialog::backdrop{background:#0006}
   <div class="btns"><button class="btn pri" id="go">로그인</button></div><p class="hint" id="lmsg"></p>
 </div>
 <div id="app" hidden>
-  <header class="top"><h1 class="logo">diti</h1><span class="sub">국어 사전 · 표준국어대사전</span><button class="btn sm" id="out">로그아웃</button></header>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="s" aria-selected="true">검색</button><button class="tab" role="tab" data-t="w" aria-selected="false" id="tw">단어장</button><button class="tab" role="tab" data-t="x" aria-selected="false">용례 입력</button></div>
+  <header class="top"><h1 class="logo">diti</h1><span class="sub">국어 사전 · 표준국어대사전</span><button class="btn sm" id="inst" hidden>📲 설치</button><button class="btn sm ic" id="rld" title="새로고침">↻</button><button class="btn sm" id="out">로그아웃</button></header>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="s" aria-selected="true">검색</button><button class="tab" role="tab" data-t="w" aria-selected="false" id="tw">단어장</button><button class="tab" role="tab" data-t="t" aria-selected="false" id="tt">태그</button><button class="tab" role="tab" data-t="x" aria-selected="false">용례 입력</button></div>
   <main class="sheet">
     <section id="ps">
       <div class="stick"><input id="q" type="text" placeholder="단어를 입력하세요" autocomplete="off"><button class="btn pri" id="sb">검색</button></div>
@@ -87,6 +96,10 @@ dialog::backdrop{background:#0006}
     <section id="pw2" hidden>
       <div class="stick"><input id="wq" type="text" placeholder="단어장에서 찾기 (단어·뜻)" autocomplete="off"></div>
       <div id="wl"></div>
+    </section>
+    <section id="pt" hidden>
+      <div class="stick tgs" id="tc"></div>
+      <div id="tl"></div>
     </section>
     <section id="px" hidden>
       <p class="hint">임시 입력 화면이에요. 행마다 책·쪽수·용례를 넣고 그 줄의 '저장'을 누르세요.</p>
@@ -106,6 +119,7 @@ dialog::backdrop{background:#0006}
   <label class="f">단어<input id="e-w" type="text"></label>
   <label class="f">뜻 (1. 뜻 / 2. 뜻 형식)<textarea id="e-m" rows="5"></textarea></label>
   <label class="f">메모<textarea id="e-n" rows="2"></textarea></label>
+  <div class="f">태그<div class="tg" id="e-t"></div><div class="xr" style="margin-top:4px"><input id="e-tn" type="text" placeholder="새 태그 (예: 감정)" maxlength="20" autocomplete="off"><button class="btn sm" id="e-ta" type="button" style="flex:none">추가</button></div></div>
   <p class="hint" id="e-h"></p>
   <div class="btns"><button class="btn pri" id="e-save" type="button">저장</button><button class="btn dng" id="e-del" type="button">삭제</button><button class="btn" id="e-x" type="button">닫기</button></div>
 </form></dialog>
@@ -147,11 +161,20 @@ function reindex(){U=new Map();UL=new Map();UA.forEach(x=>{const k=String(x.word
 const cnt=()=>$('#tw').textContent=`단어장 ${W.length}`;
 
 /* ---------- 탭 ---------- */
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===b));
-  $('#ps').hidden=b.dataset.t!=='s';$('#pw2').hidden=b.dataset.t!=='w';$('#px').hidden=b.dataset.t!=='x';
-  if(b.dataset.t==='x')renderX();else (b.dataset.t==='s'?$('#q'):$('#wq')).focus();
-});
+/* 탭마다 스크롤 위치를 따로 기억(앱을 완전히 끄기 전까지: sessionStorage) */
+const SS={get(k,d){try{const v=sessionStorage.getItem('diti_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{sessionStorage.setItem('diti_'+k,JSON.stringify(v))}catch(e){}}};
+let CUR='s';const SCR=SS.get('scr',{});
+const sheet=()=>$('.sheet');
+function goTab(t,focus){
+  SCR[CUR]=sheet().scrollTop;CUR=t;SS.set('tab',t);SS.set('scr',SCR);
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.t===t));
+  $('#ps').hidden=t!=='s';$('#pw2').hidden=t!=='w';$('#pt').hidden=t!=='t';$('#px').hidden=t!=='x';
+  if(t==='x')renderX();if(t==='t')renderT();
+  sheet().scrollTop=SCR[t]||0;
+  if(focus&&(t==='s'||t==='w'))(t==='s'?$('#q'):$('#wq')).focus({preventScroll:true});
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>goTab(b.dataset.t,true));
+let _st=null;sheet().addEventListener('scroll',()=>{clearTimeout(_st);_st=setTimeout(()=>{SCR[CUR]=sheet().scrollTop;SS.set('scr',SCR)},150)},{passive:true});
 
 /* ---------- 검색 ---------- */
 const has=w=>W.find(x=>wkey(x.word)===wkey(w))||W.find(x=>wk2(x.word)&&wk2(x.word)===wk2(w));
@@ -184,29 +207,53 @@ $('#res').onclick=e=>{const s=e.target.closest('[data-save]'),a=e.target.closest
 $('#sb').onclick=search;$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)search()});
 
 /* ---------- 단어장 ---------- */
+const tagsOf=w=>Array.isArray(w.tags)?w.tags:[];
+const rowHtml=w=>{const n=U.get(String(w.id))||0,o=OPEN.has(String(w.id));return `<div class="it${o?' open':''}" data-id="${w.id}"><div class="row"><b>${E(w.word)}</b><span class="u">${n?'×'+n:''}</span><span class="m">${E(fmtSenses(senseList(w.meaning)))}</span></div>${o?detail(w,n):''}</div>`};
 function renderW(){
-  const q=wkey($('#wq').value),L=W.filter(w=>!q||wkey(w.word).includes(q)||wkey(w.meaning).includes(q));
-  $('#wl').innerHTML=L.map(w=>{const n=U.get(String(w.id))||0;const o=OPEN.has(String(w.id));return `<div class="it${o?' open':''}" data-id="${w.id}"><div class="row"><b>${E(w.word)}</b><span class="u">${n?'×'+n:''}</span><span class="m">${E(fmtSenses(senseList(w.meaning)))}</span></div>${o?detail(w,n):''}</div>`}).join('')||`<p class="empty">${W.length?'찾는 단어가 없어요':'아직 담은 단어가 없어요. 검색 탭에서 담아 보세요.'}</p>`;
+  const q=wkey($('#wq').value),L=W.filter(w=>!q||wkey(w.word).includes(q)||wkey(w.meaning).includes(q)||tagsOf(w).some(t=>wkey(t).includes(q)));
+  $('#wl').innerHTML=L.map(rowHtml).join('')||`<p class="empty">${W.length?'찾는 단어가 없어요':'아직 담은 단어가 없어요. 검색 탭에서 담아 보세요.'}</p>`;
+  if(!$('#pt').hidden)renderT();
 }
+/* ---------- 태그 ---------- */
+const BASE_T=['성격','장소','행동'];   // 기본 태그(안 써도 늘 보임). 새 태그는 단어 수정 창에서 추가
+const TAGOK=()=>!W.length||W.some(w=>'tags' in w);   // DB에 tags 칸이 생겼는지
+function allTags(){const c=new Map(BASE_T.map(t=>[t,0]));W.forEach(w=>tagsOf(w).forEach(t=>c.set(t,(c.get(t)||0)+1)));return[...c].sort((a,b)=>(BASE_T.indexOf(a[0])+1||99)-(BASE_T.indexOf(b[0])+1||99)||a[0].localeCompare(b[0],'ko'))}
+let TSEL=SS.get('tsel',BASE_T[0]);
+function renderT(){
+  if(!TAGOK()){$('#tc').innerHTML='';$('#tl').innerHTML='<p class="empty">태그 칸이 아직 없어요. diti_tags.sql을 실행하면 쓸 수 있어요.</p>';return}
+  const T=allTags(),none=W.filter(w=>!tagsOf(w).length).length;
+  if(TSEL!=='__none'&&!T.some(t=>t[0]===TSEL))TSEL=T[0][0];
+  $('#tc').innerHTML=T.map(([t,n])=>`<button class="chip${t===TSEL?' on':''}" data-tg="${E(t)}">${E(t)}<small>${n}</small></button>`).join('')+`<button class="chip${TSEL==='__none'?' on':''}" data-tg="__none">태그 없음<small>${none}</small></button>`;
+  const L=W.filter(w=>TSEL==='__none'?!tagsOf(w).length:tagsOf(w).includes(TSEL));
+  $('#tl').innerHTML=L.map(rowHtml).join('')||'<p class="empty">이 태그를 단 단어가 없어요. 단어장에서 단어를 열고 \'수정\'에서 태그를 고르세요.</p>';
+}
+$('#tc').onclick=e=>{const c=e.target.closest('[data-tg]');if(!c)return;TSEL=c.dataset.tg;SS.set('tsel',TSEL);SCR.t=0;renderT();sheet().scrollTop=0};
 let _wt=null;$('#wq').oninput=()=>{clearTimeout(_wt);_wt=setTimeout(renderW,150)};
 const OPEN=new Set();
 function detail(w,n){
   const ss=senseList(w.meaning),us=(UL.get(String(w.id))||[]).slice().sort((a,b)=>String(BN.get(String(a.book))||'').localeCompare(String(BN.get(String(b.book))||''),'ko')||(+a.page||0)-(+b.page||0));
   const ex=us.map(u=>{const bk=BN.get(String(u.book))||'책',loc=u.page!=null&&u.page!==''?'p.'+u.page:(u.pct!=null&&u.pct!==''?Math.round(+u.pct*100)+'%':'');const t=String(u.example||'').trim();return `<div class="ex">${t?E(t):'<i>(용례 없음)</i>'} <span>(${E(bk)}${loc?'/'+E(loc):''})</span></div>`}).join('');
-  return `<div class="dt">${ss.length?`<ol>${ss.map(x=>`<li>${E(x)}</li>`).join('')}</ol>`:'<p class="empty">뜻이 없어요</p>'}${w.note?`<div class="nt">${E(w.note)}</div>`:''}${ex?`<h4>용례</h4>${ex}`:''}<div class="btns"><button class="btn sm" data-edit="${w.id}">수정</button></div></div>`;
+  const tg=tagsOf(w);
+  return `<div class="dt">${tg.length?`<div class="tgv">${tg.map(t=>`<span>${E(t)}</span>`).join('')}</div>`:''}${ss.length?`<ol>${ss.map(x=>`<li>${E(x)}</li>`).join('')}</ol>`:'<p class="empty">뜻이 없어요</p>'}${w.note?`<div class="nt">${E(w.note)}</div>`:''}${ex?`<h4>용례</h4>${ex}`:''}<div class="btns"><button class="btn sm" data-edit="${w.id}">수정</button></div></div>`;
 }
 let EID=null;
-$('#wl').onclick=e=>{const ed=e.target.closest('[data-edit]'),r=e.target.closest('.it');if(!r)return;
+let ET=new Set();
+const drawET=()=>{$('#e-t').innerHTML=TAGOK()?[...new Set([...allTags().map(x=>x[0]),...ET])].map(t=>`<button type="button" class="chip${ET.has(t)?' on':''}" data-et="${E(t)}">${E(t)}</button>`).join(''):'<span class="hint">태그 칸이 아직 없어요 (diti_tags.sql 실행 필요)</span>'};
+$('#e-t').onclick=e=>{const c=e.target.closest('[data-et]');if(!c)return;const t=c.dataset.et;ET.has(t)?ET.delete(t):ET.add(t);drawET()};
+const addET=()=>{const t=$('#e-tn').value.trim().replace(/[,#]/g,'');if(!t||!TAGOK())return;ET.add(t);$('#e-tn').value='';drawET()};
+$('#e-ta').onclick=addET;$('#e-tn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addET()}});
+const listClick=e=>{const ed=e.target.closest('[data-edit]'),r=e.target.closest('.it');if(!r)return;
   if(!ed){const k=r.dataset.id;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);renderW();return}
   const w=W.find(x=>String(x.id)===r.dataset.id);if(!w)return;EID=w.id;
-  $('#e-w').value=w.word;$('#e-m').value=fmtSenses(senseList(w.meaning));$('#e-n').value=w.note||'';
+  $('#e-w').value=w.word;$('#e-m').value=fmtSenses(senseList(w.meaning));$('#e-n').value=w.note||'';ET=new Set(tagsOf(w));$('#e-tn').value='';drawET();
   const n=U.get(String(w.id))||0;$('#e-del').disabled=n>0;$('#e-h').textContent=n?`bkbk에서 ${n}번 쓰인 단어라 삭제할 수 없어요 (뜻·메모는 고칠 수 있어요)`:'';
   $('#ed').showModal()};
+$('#wl').onclick=listClick;$('#tl').onclick=listClick;
 $('#e-x').onclick=()=>$('#ed').close();
 $('#e-save').onclick=guard(async()=>{
   const w=W.find(x=>x.id===EID),word=$('#e-w').value.trim();if(!word)return toast('단어를 입력하세요');
   if(W.some(x=>x.id!==EID&&wkey(x.word)===wkey(word)))return toast('이미 단어장에 있는 단어예요');
-  const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${EID}`,{word,meaning:fmtSenses(senseList($('#e-m').value)),note:$('#e-n').value.trim()});
+  const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${EID}`,{word,meaning:fmtSenses(senseList($('#e-m').value)),note:$('#e-n').value.trim(),...(TAGOK()?{tags:[...ET]}:{})});
   Object.assign(w,r[0]);sortW();renderW();$('#ed').close();toast('저장했어요');
 });
 $('#e-del').onclick=guard(async()=>{
@@ -257,7 +304,18 @@ $('#n-add').onclick=guard(async()=>{
 $('#go').onclick=async()=>{$('#lmsg').textContent='';try{saveSes(await gotrue('password',{email:$('#em').value.trim(),password:$('#pw').value}));show()}catch(e){$('#lmsg').textContent=e.message}};
 $('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
 $('#out').onclick=()=>{saveSes(null);show()};
-function show(){$('#login').hidden=!!SES;$('#app').hidden=!SES;if(SES){guard(loadAll)();$('#q').focus()}}
+function show(){$('#login').hidden=!!SES;$('#app').hidden=!SES;if(SES){const t=SS.get('tab','s');guard(async()=>{await loadAll();if(t!=='s')goTab(t);else{sheet().scrollTop=SCR.s||0;$('#q').focus({preventScroll:true})}})()}}
+$('#rld').onclick=()=>location.reload();
+/* 📲 설치: 설치된 앱으로 열면 숨김. 크롬이 허락하면 바로 설치, 아니면 방법 안내 */
+let dp=null;const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(!standalone)$('#inst').hidden=false;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});
+addEventListener('appinstalled',()=>{dp=null;$('#inst').hidden=true});
+$('#inst').onclick=async()=>{
+  if(dp){dp.prompt();await dp.userChoice;dp=null;return}
+  let had=false;try{had=navigator.getInstalledRelatedApps&&(await navigator.getInstalledRelatedApps()).length>0}catch(e){}
+  alert(/iphone|ipad|ipod/i.test(navigator.userAgent)?'아이폰: 사파리 아래 공유 버튼 → "홈 화면에 추가"를 누르세요.'
+    :(had?'diti가 이미 이 기기에 설치돼 있어요.\n':'')+'지금은 바로 설치할 수 없어요.\n이미 깔려 있다면 기존 diti를 지우고(아이콘 꾹 → 제거) 이 페이지를 새로고침하면 설치 버튼이 동작해요.\n또는 크롬 메뉴(⋮) → "앱 설치"를 눌러도 돼요.')};
 show();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
