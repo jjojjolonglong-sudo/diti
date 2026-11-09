@@ -47,7 +47,7 @@ label.f{display:block;font-weight:700;font-size:12px;margin-top:8px}label.f>*{ma
 .sl input{margin:3px 0 0;flex:none}
 .eb{display:flex;gap:6px;margin-top:4px}
 /* 단어장 */
-.row{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:baseline;padding:5px 2px;border-bottom:1px dashed var(--line);cursor:pointer}
+.row{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);gap:8px;align-items:baseline;padding:5px 2px;border-bottom:1px dashed var(--line);cursor:pointer}
 .row:hover{background:var(--sel)}
 .addbox{border:1.5px dashed var(--line);padding:6px 8px;margin:6px 0}.addbox summary{cursor:pointer;font-weight:700;font-size:13px}
 .xr{display:flex;gap:6px;margin:5px 0}.xr>*{min-width:0;flex:1}
@@ -62,13 +62,16 @@ label.f{display:block;font-weight:700;font-size:12px;margin-top:8px}label.f>*{ma
 .sl.done{opacity:.55;cursor:default}.sl em{font-style:normal;font-size:11px;font-weight:700;color:#0f7a4c}
 .row .m{color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .u{font-size:11px;font-weight:700;color:var(--mute)}
-.btn.ic{width:26px;padding:2px 0;text-align:center}
+.mq{flex:1;min-width:0;display:flex}.mq input{width:100%;max-width:220px;font:inherit;font-size:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:2px 7px;border-radius:0;height:24px;-webkit-appearance:none}.mq input:focus-visible{outline:3px solid var(--cy);outline-offset:1px}
+.top .btn.sm{height:24px;display:inline-flex;align-items:center}
 /* 태그 */
 div.f{font-weight:700;font-size:12px;margin-top:8px}div.f .tg{margin-top:4px;font-weight:700}
 .tg{display:flex;flex-wrap:wrap;gap:4px}
 .chip{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);padding:1px 8px;cursor:pointer;border-radius:0}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}.chip small{font-weight:400;opacity:.75;margin-left:3px}
-.tgs{flex-wrap:wrap;gap:4px;border-bottom:1px dashed var(--line)}
+.stick.col{flex-direction:column;border-bottom:1px dashed var(--line)}
+.ck{margin:0;width:15px;height:15px;accent-color:var(--acc);align-self:center;cursor:pointer}
+.bulk{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;font-weight:700;background:var(--tint);padding:4px 6px}.bulk input{flex:1;min-width:90px;font:inherit;font-size:12px;font-weight:400;border:1px solid var(--ink);background:#fff;padding:2px 6px;height:24px;border-radius:0}.bulk .btn.sm{height:24px}
 .row .tl{grid-column:1/-1;font-size:11px;color:var(--acc);font-weight:700;margin-top:-3px}
 .dt .tgv{margin:4px 0}.dt .tgv span{font-size:11px;font-weight:700;color:var(--acc);border:1px solid var(--acc);padding:0 6px;margin-right:4px}
 dialog{border:1.5px solid var(--ink);padding:12px;width:min(440px,94vw);color:var(--ink)}
@@ -86,7 +89,7 @@ dialog::backdrop{background:#0006}
   <div class="btns"><button class="btn pri" id="go">로그인</button></div><p class="hint" id="lmsg"></p>
 </div>
 <div id="app" hidden>
-  <header class="top"><h1 class="logo">diti</h1><span class="sub">국어 사전 · 표준국어대사전</span><button class="btn sm" id="inst" hidden>📲 설치</button><button class="btn sm ic" id="rld" title="새로고침">↻</button><button class="btn sm" id="out">로그아웃</button></header>
+  <header class="top"><h1 class="logo">diti</h1><span class="sub" id="sub">국어 사전 · 표준국어대사전</span><form class="mq" id="mqf" hidden onsubmit="return false"><input id="mq" type="search" placeholder="사전 검색" autocomplete="off" enterkeyhint="search"></form><button class="btn sm" id="inst" hidden>설치</button><button class="btn sm" id="rld">새로고침</button><button class="btn sm" id="out">로그아웃</button></header>
   <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="s" aria-selected="true">검색</button><button class="tab" role="tab" data-t="w" aria-selected="false" id="tw">단어장</button><button class="tab" role="tab" data-t="t" aria-selected="false" id="tt">태그</button><button class="tab" role="tab" data-t="x" aria-selected="false">용례 입력</button></div>
   <main class="sheet">
     <section id="ps">
@@ -94,11 +97,11 @@ dialog::backdrop{background:#0006}
       <pre id="dbg" hidden style="white-space:pre-wrap;word-break:break-all;font-size:11px;background:#f4f4f4;padding:6px;margin:6px 0"></pre><div id="res"><p class="empty">단어를 검색하고, 담고 싶은 뜻을 골라 단어장에 담으세요.</p></div>
     </section>
     <section id="pw2" hidden>
-      <div class="stick"><input id="wq" type="text" placeholder="단어장에서 찾기 (단어·뜻)" autocomplete="off"></div>
+      <div class="stick col"><input id="wq" type="text" placeholder="단어장에서 찾기 (단어·뜻·태그)" autocomplete="off"><div class="bulk" data-bulk hidden></div></div>
       <div id="wl"></div>
     </section>
     <section id="pt" hidden>
-      <div class="stick tgs" id="tc"></div>
+      <div class="stick col"><div class="tg" id="tc"></div><div class="bulk" data-bulk hidden></div></div>
       <div id="tl"></div>
     </section>
     <section id="px" hidden>
@@ -118,12 +121,11 @@ dialog::backdrop{background:#0006}
 <dialog id="ed"><form method="dialog" id="edf" onsubmit="return false">
   <label class="f">단어<input id="e-w" type="text"></label>
   <label class="f">뜻 (1. 뜻 / 2. 뜻 형식)<textarea id="e-m" rows="5"></textarea></label>
-  <label class="f">메모<textarea id="e-n" rows="2"></textarea></label>
   <div class="f">태그<div class="tg" id="e-t"></div><div class="xr" style="margin-top:4px"><input id="e-tn" type="text" placeholder="새 태그 (예: 감정)" maxlength="20" autocomplete="off"><button class="btn sm" id="e-ta" type="button" style="flex:none">추가</button></div></div>
   <p class="hint" id="e-h"></p>
   <div class="btns"><button class="btn pri" id="e-save" type="button">저장</button><button class="btn dng" id="e-del" type="button">삭제</button><button class="btn" id="e-x" type="button">닫기</button></div>
 </form></dialog>
-<div id="toast" hidden></div>
+<datalist id="tgl"></datalist><div id="toast" hidden></div>
 <script>
 const CFG=window.APP_CONFIG||{};
 const SB=CFG.SB||'https://rtvvajhsnwkkrmncyfbs.supabase.co',ANON=CFG.ANON||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dnZhamhzbndra3JtbmN5ZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NjkwMTEsImV4cCI6MjEwNzA0NTAxMX0.O2aLLeazv_FhUhbVAkp4vz3pw8GPb_683dUu7Et1Cwk';
@@ -169,6 +171,7 @@ function goTab(t,focus){
   SCR[CUR]=sheet().scrollTop;CUR=t;SS.set('tab',t);SS.set('scr',SCR);
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.t===t));
   $('#ps').hidden=t!=='s';$('#pw2').hidden=t!=='w';$('#pt').hidden=t!=='t';$('#px').hidden=t!=='x';
+  $('#sub').hidden=t!=='s';$('#mqf').hidden=t==='s';
   if(t==='x')renderX();if(t==='t')renderT();
   sheet().scrollTop=SCR[t]||0;
   if(focus&&(t==='s'||t==='w'))(t==='s'?$('#q'):$('#wq')).focus({preventScroll:true});
@@ -200,7 +203,7 @@ const saveSenses=guard(async i=>{
   if(ex){const old=senseList(ex.meaning),add=picked.filter(p=>!old.some(t=>sameSense(t,p)));
     if(!add.length)return toast('이미 단어장에 있는 뜻이에요');
     const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${ex.id}`,{meaning:fmtSenses([...old,...add])});ex.meaning=r[0].meaning;toast(`'${ex.word}'에 뜻 ${add.length}개를 더했어요`)}
-  else{const r=await api('POST','/rest/v1/diti_words',{id:crypto.randomUUID(),word:it.word.trim(),meaning:fmtSenses(picked),note:''});W.push(r[0]);sortW();toast(`'${it.word}'를 단어장에 담았어요`)}
+  else{const r=await api('POST','/rest/v1/diti_words',{id:crypto.randomUUID(),word:it.word.trim(),meaning:fmtSenses(picked)});W.push(r[0]);sortW();toast(`'${it.word}'를 단어장에 담았어요`)}
   cnt();renderW();R.forEach((x,k)=>{const bx=document.querySelector(`.ent[data-i="${k}"]`);if(!bx)return;bx.querySelector('.have').hidden=!has(x.word);bx.querySelectorAll('label.sl').forEach((l,j)=>{if(savedSense(x.word,x.senses[j])){const c=l.querySelector('input');c.checked=false;c.disabled=true;l.classList.add('done');if(!l.querySelector('em'))l.querySelector('span').insertAdjacentHTML('beforeend',' <em>✔ 담음</em>')}})});
 });
 $('#res').onclick=e=>{const s=e.target.closest('[data-save]'),a=e.target.closest('[data-all]');if(s)saveSenses(+s.dataset.save);if(a)document.querySelectorAll(`.ent[data-i="${a.dataset.all}"] input[data-s]:not(:disabled)`).forEach(c=>c.checked=true)};
@@ -208,12 +211,27 @@ $('#sb').onclick=search;$('#q').addEventListener('keydown',e=>{if(e.key==='Enter
 
 /* ---------- 단어장 ---------- */
 const tagsOf=w=>Array.isArray(w.tags)?w.tags:[];
-const rowHtml=w=>{const n=U.get(String(w.id))||0,o=OPEN.has(String(w.id));return `<div class="it${o?' open':''}" data-id="${w.id}"><div class="row"><b>${E(w.word)}</b><span class="u">${n?'×'+n:''}</span><span class="m">${E(fmtSenses(senseList(w.meaning)))}</span></div>${o?detail(w,n):''}</div>`};
+const rowHtml=w=>{const n=U.get(String(w.id))||0,o=OPEN===String(w.id);return `<div class="it${o?' open':''}" data-id="${w.id}"><div class="row"><input type="checkbox" class="ck" data-ck aria-label="선택"${SEL.has(String(w.id))?' checked':''}><b>${E(w.word)}</b><span class="u">${n?'×'+n:''}</span><span class="m">${E(fmtSenses(senseList(w.meaning)))}</span></div>${o?detail(w,n):''}</div>`};
 function renderW(){
   const q=wkey($('#wq').value),L=W.filter(w=>!q||wkey(w.word).includes(q)||wkey(w.meaning).includes(q)||tagsOf(w).some(t=>wkey(t).includes(q)));
   $('#wl').innerHTML=L.map(rowHtml).join('')||`<p class="empty">${W.length?'찾는 단어가 없어요':'아직 담은 단어가 없어요. 검색 탭에서 담아 보세요.'}</p>`;
   if(!$('#pt').hidden)renderT();
+  $('#tgl').innerHTML=TAGOK()?allTags().map(t=>`<option value="${E(t[0])}">`).join(''):'';drawBulk();
 }
+/* ---------- 여러 단어에 태그 한 번에 (체크박스) ---------- */
+const SEL=new Set();
+function drawBulk(){const n=SEL.size;document.querySelectorAll('[data-bulk]').forEach(b=>{b.hidden=!n||!TAGOK();if(!n)return;
+  if(!b.dataset.ready){b.innerHTML=`<span data-bn></span><input data-bt list="tgl" placeholder="태그" maxlength="20" autocomplete="off"><button class="btn sm pri" data-ba="1">달기</button><button class="btn sm" data-ba="0">빼기</button><button class="btn sm" data-bx>선택 해제</button>`;b.dataset.ready=1}
+  b.querySelector('[data-bn]').textContent=n+'개 선택'})}
+const bulkTag=guard(async(add,t)=>{t=String(t||'').trim().replace(/[,#]/g,'');if(!t)return toast('태그를 입력하거나 고르세요');
+  const L=W.filter(w=>SEL.has(String(w.id))&&(add?!tagsOf(w).includes(t):tagsOf(w).includes(t)));
+  for(let i=0;i<L.length;i+=8)await Promise.all(L.slice(i,i+8).map(async w=>{const tg=add?[...tagsOf(w),t]:tagsOf(w).filter(x=>x!==t);const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${w.id}`,{tags:tg});w.tags=r[0].tags}));
+  toast(L.length?`${L.length}개 단어에 '${t}' 태그를 ${add?'달았어요':'뺐어요'}`:(add?'이미 모두 달려 있어요':'그 태그가 달린 단어가 없어요'));SEL.clear();drawBulk();renderW()});
+document.addEventListener('change',e=>{if(!e.target.matches('[data-ck]'))return;const k=e.target.closest('.it').dataset.id;e.target.checked?SEL.add(k):SEL.delete(k);drawBulk()});
+document.addEventListener('click',e=>{const a=e.target.closest('[data-ba]'),x=e.target.closest('[data-bx]');
+  if(a){bulkTag(a.dataset.ba==='1',a.parentNode.querySelector('[data-bt]').value);a.parentNode.querySelector('[data-bt]').value=''}
+  if(x){SEL.clear();drawBulk();renderW()}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.target.matches('[data-bt]')){e.preventDefault();bulkTag(true,e.target.value);e.target.value=''}});
 /* ---------- 태그 ---------- */
 const BASE_T=['성격','장소','행동'];   // 기본 태그(안 써도 늘 보임). 새 태그는 단어 수정 창에서 추가
 const TAGOK=()=>!W.length||W.some(w=>'tags' in w);   // DB에 tags 칸이 생겼는지
@@ -229,12 +247,12 @@ function renderT(){
 }
 $('#tc').onclick=e=>{const c=e.target.closest('[data-tg]');if(!c)return;TSEL=c.dataset.tg;SS.set('tsel',TSEL);SCR.t=0;renderT();sheet().scrollTop=0};
 let _wt=null;$('#wq').oninput=()=>{clearTimeout(_wt);_wt=setTimeout(renderW,150)};
-const OPEN=new Set();
+let OPEN=null;   // 한 번에 하나만 열림
 function detail(w,n){
   const ss=senseList(w.meaning),us=(UL.get(String(w.id))||[]).slice().sort((a,b)=>String(BN.get(String(a.book))||'').localeCompare(String(BN.get(String(b.book))||''),'ko')||(+a.page||0)-(+b.page||0));
   const ex=us.map(u=>{const bk=BN.get(String(u.book))||'책',loc=u.page!=null&&u.page!==''?'p.'+u.page:(u.pct!=null&&u.pct!==''?Math.round(+u.pct*100)+'%':'');const t=String(u.example||'').trim();return `<div class="ex">${t?E(t):'<i>(용례 없음)</i>'} <span>(${E(bk)}${loc?'/'+E(loc):''})</span></div>`}).join('');
   const tg=tagsOf(w);
-  return `<div class="dt">${tg.length?`<div class="tgv">${tg.map(t=>`<span>${E(t)}</span>`).join('')}</div>`:''}${ss.length?`<ol>${ss.map(x=>`<li>${E(x)}</li>`).join('')}</ol>`:'<p class="empty">뜻이 없어요</p>'}${w.note?`<div class="nt">${E(w.note)}</div>`:''}${ex?`<h4>용례</h4>${ex}`:''}<div class="btns"><button class="btn sm" data-edit="${w.id}">수정</button></div></div>`;
+  return `<div class="dt">${tg.length?`<div class="tgv">${tg.map(t=>`<span>${E(t)}</span>`).join('')}</div>`:''}${ss.length?`<ol>${ss.map(x=>`<li>${E(x)}</li>`).join('')}</ol>`:'<p class="empty">뜻이 없어요</p>'}${ex?`<h4>용례</h4>${ex}`:''}<div class="btns"><button class="btn sm" data-edit="${w.id}">수정</button></div></div>`;
 }
 let EID=null;
 let ET=new Set();
@@ -243,9 +261,10 @@ $('#e-t').onclick=e=>{const c=e.target.closest('[data-et]');if(!c)return;const t
 const addET=()=>{const t=$('#e-tn').value.trim().replace(/[,#]/g,'');if(!t||!TAGOK())return;ET.add(t);$('#e-tn').value='';drawET()};
 $('#e-ta').onclick=addET;$('#e-tn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addET()}});
 const listClick=e=>{const ed=e.target.closest('[data-edit]'),r=e.target.closest('.it');if(!r)return;
-  if(!ed){const k=r.dataset.id;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);renderW();return}
+  if(e.target.closest('[data-ck]'))return;
+  if(!ed){const k=r.dataset.id;OPEN=OPEN===k?null:k;renderW();return}
   const w=W.find(x=>String(x.id)===r.dataset.id);if(!w)return;EID=w.id;
-  $('#e-w').value=w.word;$('#e-m').value=fmtSenses(senseList(w.meaning));$('#e-n').value=w.note||'';ET=new Set(tagsOf(w));$('#e-tn').value='';drawET();
+  $('#e-w').value=w.word;$('#e-m').value=fmtSenses(senseList(w.meaning));ET=new Set(tagsOf(w));$('#e-tn').value='';drawET();
   const n=U.get(String(w.id))||0;$('#e-del').disabled=n>0;$('#e-h').textContent=n?`bkbk에서 ${n}번 쓰인 단어라 삭제할 수 없어요 (뜻·메모는 고칠 수 있어요)`:'';
   $('#ed').showModal()};
 $('#wl').onclick=listClick;$('#tl').onclick=listClick;
@@ -253,7 +272,7 @@ $('#e-x').onclick=()=>$('#ed').close();
 $('#e-save').onclick=guard(async()=>{
   const w=W.find(x=>x.id===EID),word=$('#e-w').value.trim();if(!word)return toast('단어를 입력하세요');
   if(W.some(x=>x.id!==EID&&wkey(x.word)===wkey(word)))return toast('이미 단어장에 있는 단어예요');
-  const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${EID}`,{word,meaning:fmtSenses(senseList($('#e-m').value)),note:$('#e-n').value.trim(),...(TAGOK()?{tags:[...ET]}:{})});
+  const r=await api('PATCH',`/rest/v1/diti_words?id=eq.${EID}`,{word,meaning:fmtSenses(senseList($('#e-m').value)),...(TAGOK()?{tags:[...ET]}:{})});
   Object.assign(w,r[0]);sortW();renderW();$('#ed').close();toast('저장했어요');
 });
 $('#e-del').onclick=guard(async()=>{
@@ -306,6 +325,8 @@ $('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
 $('#out').onclick=()=>{saveSes(null);show()};
 function show(){$('#login').hidden=!!SES;$('#app').hidden=!SES;if(SES){const t=SS.get('tab','s');guard(async()=>{await loadAll();if(t!=='s')goTab(t);else{sheet().scrollTop=SCR.s||0;$('#q').focus({preventScroll:true})}})()}}
 $('#rld').onclick=()=>location.reload();
+/* 다른 탭에서 쓰는 작은 사전 검색창: 엔터 → 검색 탭으로 가서 바로 찾기 */
+$('#mq').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();const v=$('#mq').value.trim();if(!v)return;$('#q').value=v;$('#mq').value='';$('#mq').blur();goTab('s');search()}});
 /* 📲 설치: 설치된 앱으로 열면 숨김. 크롬이 허락하면 바로 설치, 아니면 방법 안내 */
 let dp=null;const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
 if(!standalone)$('#inst').hidden=false;
