@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#F1E9D6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="diti">
 <script src="https://jjojjolonglong-sudo.github.io/mnmn/config.js"></script>
 <script src="https://jjojjolonglong-sudo.github.io/mnmn/core.v1.js" data-app="diti"></script>
+<script src="https://jjojjolonglong-sudo.github.io/mnmn/pick.v1.js"></script>
 <style>
 /* 콘셉트: 종이 사전. 따뜻한 크림 바탕, 남색 잉크, 버건디 포인트 하나. 모서리는 각지게 */
 :root{--ink:#1F2A44;--paper:#FFFDF8;--bg:#F1E9D6;--acc:#8C2438;--accd:#701B2C;--cy:#8C2438;--dng:#B4452F;--mute:#6B6354;--tint:#EFE4CA;--line:#CDBF9A;--sel:#F7F0DE}
@@ -117,7 +118,7 @@ dialog::backdrop{background:#0006}
       <p class="hint">임시 입력 화면이에요. 행마다 책·쪽수·용례를 넣고 그 줄의 '저장'을 누르세요.</p>
       <details class="addbox" open><summary>＋ 새 용례 행 추가</summary>
         <div class="xr"><input id="n-w" list="wdl" placeholder="단어 (단어장에 있는 것)" autocomplete="off"><datalist id="wdl"></datalist>
-        <select id="n-b"></select></div>
+        <select id="n-b" data-ph="책 이름을 쳐서 고르기"></select></div>
         <div class="xr"><input id="n-d" type="date"><input id="n-p" type="number" inputmode="numeric" placeholder="쪽수"><input id="n-c" type="text" placeholder="퍼센트 (예: 82)"></div>
         <textarea id="n-e" rows="2" placeholder="용례 문장"></textarea>
         <div class="btns"><button class="btn pri sm" id="n-add">추가</button></div>
@@ -357,6 +358,8 @@ $('#inst').onclick=async()=>{
   alert(/iphone|ipad|ipod/i.test(navigator.userAgent)?'아이폰: 사파리 아래 공유 버튼 → "홈 화면에 추가"를 누르세요.'
     :(had?'diti가 이미 이 기기에 설치돼 있어요.\n':'')+'지금은 바로 설치할 수 없어요.\n이미 깔려 있다면 기존 diti를 지우고(아이콘 꾹 → 제거) 이 페이지를 새로고침하면 설치 버튼이 동작해요.\n또는 크롬 메뉴(⋮) → "앱 설치"를 눌러도 돼요.')};
 show();
+/* 용례 입력의 책 고르기: 타이핑해서 찾기 (책은 bkbk에서 만들어요) */
+if(window.Pick)Pick.auto('#n-b');
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
